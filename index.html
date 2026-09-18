@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>위시태그</title>
+<meta name="description" content="마음에 드는 선물을 골라 선점해주세요. 선점된 항목은 다른 분과 겹치지 않아요.">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="지민의 Birthday 위시태그">
+<meta property="og:description" content="마음에 드는 선물을 골라 선점해주세요. 선물이 겹치지 않게!">
+<meta property="og:url" content="https://benny3s.github.io/wishtag/">
+<meta property="og:image" content="https://benny3s.github.io/wishtag/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F3F6F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151A14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 6a2 2 0 0 1 2-2h10.2a2 2 0 0 1 1.4.6l10 10a2 2 0 0 1 0 2.8l-10.2 10.2a2 2 0 0 1-2.8 0l-10-10A2 2 0 0 1 4 16.2z' fill='%232F5D50'/%3E%3Ccircle cx='10.5' cy='10.5' r='2.5' fill='%23F3F6F2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="inappBanner" class="inapp" role="region" aria-label="브라우저 안내" hidden>
+  <svg class="inapp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20L12 3Zm0 6v5m0 3v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="inapp-body">
+    <p class="inapp-text" id="inappText"></p>
+    <div class="inapp-actions">
+      <button type="button" class="btn btn-sm btn-primary" id="inappOpen" hidden></button>
+      <button type="button" class="btn btn-sm btn-ghost" id="inappCopy">링크 복사</button>
+    </div>
+  </div>
+  <button type="button" class="icon-btn inapp-close" id="inappClose" aria-label="안내 닫기">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<header class="masthead">
+  <div class="topbar">
+    <span class="eyebrow">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7.4a1.5 1.5 0 0 1 1 .4l7.7 7.7a1.5 1.5 0 0 1 0 2.1l-7.4 7.4a1.5 1.5 0 0 1-2.1 0l-7.7-7.7a1.5 1.5 0 0 1-.4-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></svg>
+      WISHTAG
+    </span>
+    <div class="admin-entry">
+      <button type="button" class="chip" id="adminToggle" aria-expanded="false" aria-controls="pinForm">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span id="adminToggleLabel">관리자</span>
+      </button>
+      <form class="pin-form" id="pinForm" novalidate hidden>
+        <label class="sr-only" for="pinInput">관리자 PIN</label>
+        <input id="pinInput" type="password" inputmode="text" autocomplete="off" placeholder="PIN" maxlength="64" required>
+        <button type="submit" class="btn btn-sm btn-primary">확인</button>
+      </form>
+    </div>
+  </div>
+
+  <h1 id="heading" class="heading is-loading">위시태그</h1>
+  <p id="subheading" class="subheading"></p>
+
+  <div class="progress" id="progress" hidden>
+    <div class="progress-label">
+      <span>선점 현황</span>
+      <span class="mono" id="progressText"></span>
+    </div>
+    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+</header>
+
+<section class="admin-panel" id="adminPanel" aria-label="관리자 패널" hidden>
+  <div class="admin-head">
+    <h2>관리자 패널</h2>
+    <button type="button" class="btn btn-sm btn-ghost" id="adminLogout">관리자 모드 끝내기</button>
+  </div>
+
+  <div class="admin-grid">
+    <form class="admin-card" id="addForm" novalidate>
+      <h3>항목 추가</h3>
+      <label>이름 <input name="name" maxlength="80" required placeholder="예) 테클라 주방 손수건"></label>
+      <label>메모 <input name="note" maxlength="120" placeholder="색상·사이즈 등 (선택)"></label>
+      <label>링크 <input name="link" type="text" inputmode="url" autocapitalize="off" spellcheck="false" maxlength="600" placeholder="https:// (선택)"></label>
+      <button type="submit" class="btn btn-primary">추가하기</button>
+    </form>
+
+    <form class="admin-card" id="headingForm" novalidate>
+      <h3>제목 · 설명</h3>
+      <label>제목 <input name="heading" maxlength="80" required></label>
+      <label>설명 <textarea name="subheading" rows="7" maxlength="700"></textarea></label>
+      <button type="submit" class="btn btn-primary">저장하기</button>
+    </form>
+
+    <form class="admin-card" id="pinChangeForm" novalidate>
+      <h3>PIN 변경</h3>
+      <label>현재 PIN <input name="current" type="password" autocomplete="off" required></label>
+      <label>새 PIN <input name="next" type="password" autocomplete="off" minlength="4" required></label>
+      <label>새 PIN 확인 <input name="confirm" type="password" autocomplete="off" minlength="4" required></label>
+      <button type="submit" class="btn btn-primary">PIN 바꾸기</button>
+    </form>
+
+    <div class="admin-card admin-card-misc">
+      <h3>정리</h3>
+      <p class="muted">카드마다 <b>수정 · 해제 · 삭제</b> 버튼이 보여요. 삭제와 해제는 한 번 더 눌러야 실행돼요.</p>
+      <button type="button" class="btn btn-danger-ghost" id="clearExamples" hidden></button>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="grid" id="grid" aria-live="polite" aria-busy="true"></div>
+</main>
+
+<footer class="footer">
+  <span class="mono" id="syncLabel">불러오는 중…</span>
+  <button type="button" class="text-btn mono" id="refreshBtn">새로고침</button>
+</footer>
+
+<div class="sheet" id="sheet" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>
