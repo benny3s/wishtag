@@ -10,7 +10,6 @@ const POLL_MS = 30000;
 const TIMEOUT_MS = 20000;
 const MAX_URL = 8000;          // Apps Script는 약 8KB를 넘는 GET을 400으로 거절함
 const SS_ADMIN = 'wishtag_admin';
-const LS_NICK = 'wishtag_nick';
 const SS_BANNER = 'wishtag_banner_closed';
 
 const MESSAGES = {
@@ -45,7 +44,8 @@ function storage(area) {
   };
 }
 const session = storage('sessionStorage');
-const local = storage('localStorage');
+// 예전 버전이 저장해 둔 닉네임 자동 채우기 값 정리
+try { localStorage.removeItem('wishtag_nick'); } catch (_) {}
 
 function h(tag, attrs, ...children) {
   const el = document.createElement(tag);
@@ -339,8 +339,8 @@ function buildCard(it, index, admin) {
       h('label', { class: 'sr-only', for: nickId }, `${it.name} 선점할 닉네임`),
       h('input', {
         class: 'nick', id: nickId, type: 'text', maxlength: '20', placeholder: '내 닉네임',
-        autocomplete: 'nickname', enterkeyhint: 'go',
-        value: drafts[it.id] != null ? drafts[it.id] : (local.get(LS_NICK) || ''),
+        autocomplete: 'off', enterkeyhint: 'go',
+        value: drafts[it.id] || '',
       }),
       h('button', { type: 'button', class: 'btn btn-primary', dataset: { act: 'claim' } }, '선점하기'));
   }
@@ -511,11 +511,7 @@ function startClaim(item, card) {
       if (secret.trim().length < 4) throw new FieldError('secret', '암호는 4자 이상으로 정해주세요');
       const secretHash = await sha256Hex(secret.trim());
       await runOp({ type: 'claim', itemId: item.id, nickname, secretHash, claimedAt: Date.now() });
-      local.set(LS_NICK, nickname);
       delete drafts[item.id];
-      grid.querySelectorAll('.nick').forEach(el => {
-        if (!el.value && drafts[el.closest('.card').dataset.id] == null) el.value = nickname;
-      });
       toast(`선점 완료! ${nickname}님 고마워요`);
     },
   });
