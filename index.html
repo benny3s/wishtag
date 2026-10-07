@@ -30,30 +30,31 @@
 .pk1.on::after{content:" ·  지금 보는 리스트"}
 .wl-head h2{font-size:21px;letter-spacing:-.03em;margin:0}
 .wl-sub{white-space:pre-wrap;color:var(--ink);font-size:14px;line-height:1.65;margin:10px 0 0}
-.wl-sub.fold{max-height:7.2em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
-.wl-more{appearance:none;border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:700;color:var(--accent);padding:4px 0;cursor:pointer}
 .wl-stat{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
 .wl-stat span{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--card)}
 .wl-stat span.left{color:var(--accent);border-color:rgba(var(--accent-rgb),.45)}
 .ownerbar{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:8px 10px;border-radius:12px;background:rgba(var(--accent-rgb),.08);font-size:12.5px;font-weight:700;color:var(--accent)}
-.gift{position:relative}
-.gift .gnum{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.02em}
-.gift .gnum .ex{margin-left:6px;font-size:11px;color:#8a6d1f;background:rgba(138,109,31,.12);border-radius:999px;padding:1px 7px}
-.gift h3{font-size:16.5px;font-weight:800;letter-spacing:-.02em;margin:3px 0 0;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
-.gift .gnote{color:var(--muted);font-size:13.5px;margin:3px 0 0;white-space:pre-wrap}
-.gift .glink{display:inline-flex;align-items:center;gap:4px;margin:8px 0 0;font-size:13px;font-weight:700;color:var(--accent);text-decoration:none;
-  border:1px solid rgba(var(--accent-rgb),.35);border-radius:999px;padding:4px 11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gift .gact{display:flex;gap:7px;align-items:center;margin:12px 0 0}
-.gift .gact input{flex:1 1 auto;min-width:0}
-.gift .gact .btn{flex:0 0 auto}
-.gift.claimed{background:var(--soft)}
-.gift.claimed h3{color:var(--muted)}
-.gift .gtaken{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:13.5px}
-.gift .gtaken b{color:var(--accent)}
-.gift .gtaken .btn{margin-left:auto}
-.gift .gown{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--line)}
-.gift .gown .btn{min-height:34px;padding:0 11px;font-size:12.5px}
-.gift .gown .grow{flex:1 1 auto}
+/* 선물 = 한 줄씩 (2026-10-07 Benny: "한눈에 안 들어와, 한 줄로 쭉") — 번호 · 이름/메모 · 🔗 · 오른쪽 버튼 */
+.glist{padding:4px 0}
+.grow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.grow:last-child{border-bottom:0}
+.grow .gno{flex:0 0 22px;font-size:12px;font-weight:800;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.grow .gmain{flex:1 1 auto;min-width:0}
+.grow .gname{font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
+.grow .gname .ex{margin-left:6px;font-size:10.5px;font-weight:700;color:#8a6d1f;background:rgba(138,109,31,.12);border-radius:999px;padding:1px 6px;vertical-align:2px}
+.grow .gnote{display:block;font-size:12.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .gby{display:block;font-size:12.5px;color:var(--accent);font-weight:700;margin-top:1px}
+.grow .glk{flex:0 0 auto;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;
+  border:1px solid rgba(var(--accent-rgb),.35);text-decoration:none;font-size:15px}
+.grow .gbtn{flex:0 0 auto;min-height:36px;padding:0 13px;font-size:13px}
+.grow .gtk{flex:0 0 auto;appearance:none;border:1px solid var(--line);background:var(--card);font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);
+  padding:0 10px;min-height:36px;border-radius:999px;cursor:pointer;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .gtk .x{margin-left:4px;color:var(--warn)}
+.grow.taken .gname{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25)}
+.grow .gmore{flex:0 0 auto;width:36px;min-height:36px;padding:0;font-size:16px}
+/* 관리 ↔ 친구 화면 */
+.ownerbar .obtn{margin-left:auto;flex:0 0 auto}
+.ownerbar.preview{background:rgba(0,0,0,.05);color:var(--ink)}
 .addbtn{width:100%;margin:0 0 12px}
 </style>
 </head>
@@ -113,9 +114,10 @@
   <div class="card wl-head">
     <h2 id="wlHeading"></h2>
     <p class="wl-sub" id="wlSub"></p>
-    <button class="wl-more" id="wlMore" type="button" hidden>더 보기 ▾</button>
     <div class="wl-stat" id="wlStat"></div>
-    <div class="ownerbar" id="ownerBar" hidden>🔑 주인으로 보는 중 — 선물을 고칠 수 있어요</div>
+    <!-- 주인은 관리 화면 ↔ 친구 화면 미리보기 (2026-10-07 Benny) -->
+    <div class="ownerbar" id="ownerBar" hidden><span id="obText">🔑 관리 화면</span>
+      <button class="btn sm obtn" id="obToggle" type="button">👀 친구 화면으로 보기</button></div>
     <div class="sheettools" id="ownerTools" hidden>
       <button class="btn soft" id="shareBtn" type="button">🔗 친구에게 공유</button>
       <button class="btn" id="setBtn" type="button">⚙ 리스트 설정</button>
@@ -187,6 +189,23 @@
     <button class="btn primary wide" id="i_save" type="button">저장</button>
   </div>
 </div>
+<!-- ══════════ 선물 하나 — 주인 버튼 모음 ══════════ -->
+<div class="modal" id="actModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
+    <div class="spread">
+      <h2 style="margin:0;font-size:17px" id="actTitle"></h2>
+      <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
+    </div>
+    <p class="hint" style="margin:4px 0 12px" id="actSub"></p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn" id="actEdit" type="button">✎ 수정</button>
+      <button class="btn" id="actUp" type="button">↑ 위로</button>
+      <button class="btn" id="actDown" type="button">↓ 아래로</button>
+      <button class="btn" id="actRelease" type="button">선점 해제</button>
+      <button class="btn ghost danger" id="actDel" type="button">삭제</button>
+    </div>
+  </div>
+</div>
 <!-- ══════════ 선점 · 취소 (친구) ══════════ -->
 <div class="modal" id="claimModal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" style="max-width:420px">
@@ -212,7 +231,7 @@
     </div>
     <label class="fld"><span>리스트 이름 — 목록에 보여요</span><input type="text" id="s_name" maxlength="20"></label>
     <label class="fld"><span>제목 — 친구들이 보는 맨 위 큰 글씨</span><input type="text" id="s_heading" maxlength="40"></label>
-    <label class="fld"><span>소개 글 (선택)</span><textarea id="s_sub" maxlength="1000" rows="5"></textarea></label>
+    <label class="fld"><span>소개 글 (선택) — 300자까지</span><textarea id="s_sub" maxlength="300" rows="5"></textarea></label>
     <button class="btn primary wide" id="s_save" type="button">저장</button>
     <div class="fld" style="margin-top:18px"><span id="s_pinLbl">PIN</span>
       <div class="row nowrap"><input type="text" id="s_pin" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="새 PIN (비우면 해제)" style="flex:1 1 auto">
@@ -238,7 +257,7 @@
      wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
        /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
    개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
-const BUILD = "2026-10-07a";
+const BUILD = "2026-10-08a";
 
 /* ── 작은 도구 ── */
 function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
@@ -256,7 +275,8 @@ let LISTS = [], listsReady = false;          // 목록
 let WID = "", KEY = "", VID = "";            // 지금 리스트 · 주인 열쇠(있으면 주인) · 친구 화면 id
 let VIEW = null, ITEMS = [], unsub = [];
 let opening = false;                         // 링크·목록에서 여는 중 — 처음 화면이 잠깐 비치지 않게
-const owner = () => !!KEY;
+let asFriend = false;                        // 주인이 친구 화면으로 미리보는 중
+const owner = () => !!KEY && !asFriend;      // 관리 버튼을 보일지
 const listOf = id => LISTS.find(x => x.id === id) || null;
 
 /* 이 기기에서 연 리스트 — 열쇠(K)·친구 화면(v) 를 기억 */
@@ -317,7 +337,7 @@ function renderPick(){
 }
 
 /* ═══ 열기 ═══ */
-function closeList(){ unsub.forEach(f => { try { f(); } catch(e){} }); unsub = []; WID = ""; KEY = ""; VID = ""; VIEW = null; ITEMS = []; }
+function closeList(){ asFriend = false; unsub.forEach(f => { try { f(); } catch(e){} }); unsub = []; WID = ""; KEY = ""; VID = ""; VIEW = null; ITEMS = []; }
 function setUrl(){
   const q = VID && !owner() ? "?v=" + VID : (WID ? "?w=" + WID : "");
   try { history.replaceState(history.state, "", location.pathname + q); } catch(e){}
@@ -367,7 +387,8 @@ function watchView(v, wid, k){
   renderAll();
 }
 function showLock(b, msg){
-  $("#lockName").textContent = (b.locked ? "🔒 " : "") + b.name;
+  $("#lockName").textContent = b.name;
+  try { history.replaceState(history.state, "", location.pathname + "?w=" + b.id); } catch(e){}
   $("#lockHint").textContent = msg || "주인만 들어갈 수 있어요. 친구는 주인이 보낸 링크로 들어와요.";
   $("#lockHint").style.color = msg ? "var(--warn)" : "";
   $("#lockPin").value = "";
@@ -401,57 +422,79 @@ function renderAll(){
   $("#wlHeading").textContent = VIEW.heading || (b && b.name) || "위시리스트";
   const sub = VIEW.subheading || "";
   $("#wlSub").textContent = sub; $("#wlSub").hidden = !sub;
-  const long = sub.split("\n").length > 5 || sub.length > 220;
-  if (!$("#wlSub").dataset.open) $("#wlSub").classList.toggle("fold", long);
-  $("#wlMore").hidden = !long || !!$("#wlSub").dataset.open;
   const list = ordered(), taken = list.filter(x => x.claimedBy).length;
   const st = $("#wlStat"); st.innerHTML = "";
   st.append(el("span", "", "선물 " + list.length), el("span", "left", "남은 선물 " + (list.length - taken)), el("span", "", "선점 " + taken));
-  $("#ownerBar").hidden = $("#ownerTools").hidden = $("#addBtn").hidden = !owner();
+  $("#ownerBar").hidden = !KEY;
+  $("#ownerBar").classList.toggle("preview", asFriend);
+  $("#obText").textContent = asFriend ? "👀 친구 화면 미리보기" : "🔑 관리 화면";
+  $("#obToggle").textContent = asFriend ? "🔑 관리 화면으로" : "👀 친구 화면으로 보기";
+  $("#ownerTools").hidden = $("#addBtn").hidden = !owner();
   const ex = list.filter(x => x.example).length;
   $("#exClear").hidden = !owner() || !ex;
   $("#exClear").textContent = "예시 선물 " + ex + "개 지우기";
   renderGifts(list);
+  checkClaimRace();
+}
+/** 선점 창이 열린 사이에 다른 친구가 먼저 선점하면 바로 알려 준다 */
+function checkClaimRace(){
+  if ($("#claimModal").hidden || !clItem || clMode !== "claim") return;
+  const now = ITEMS.find(x => x.id === clItem.id);
+  if (!now) { clErr("이 선물이 방금 지워졌어요"); $("#cl_go").disabled = true; return; }
+  if (now.claimedBy){ clErr("방금 " + now.claimedBy + " 님이 선점했어요. 다른 선물을 골라주세요"); $("#cl_go").disabled = true; }
 }
 function renderGifts(list){
   const box = $("#gifts"); box.innerHTML = "";
   if (!list.length){ box.appendChild(el("div", "card empty", owner() ? "아직 선물이 없어요. 위의 ＋ 선물 추가로 넣어 보세요." : "아직 선물이 없어요.")); return; }
-  list.forEach((it, i) => box.appendChild(giftCard(it, i, list)));
+  const card = el("div", "card glist");
+  list.forEach((it, i) => card.appendChild(giftRow(it, i)));
+  box.appendChild(card);
 }
-function giftCard(it, i, list){
-  const c = el("div", "card gift" + (it.claimedBy ? " claimed" : ""));
-  const num = el("div", "gnum", "No." + (i + 1));
-  if (it.example) num.appendChild(el("span", "ex", "예시"));
-  c.append(num, el("h3", "", it.name));
-  if (it.note) c.appendChild(el("p", "gnote", it.note));
+/** 선물 한 줄 — 번호 · 이름(+메모) · 🔗 · [선점] 또는 '🎁 닉네임'(누르면 취소) · 주인은 [⋯] */
+function giftRow(it, i){
+  const r = el("div", "grow" + (it.claimedBy ? " taken" : ""));
+  r.appendChild(el("span", "gno", String(i + 1)));
+  const m = el("div", "gmain");
+  const nm = el("div", "gname", it.name);
+  if (it.example) nm.appendChild(el("span", "ex", "예시"));
+  m.appendChild(nm);
+  if (it.note) m.appendChild(el("span", "gnote", it.note));
+  if (it.claimedBy && owner()) m.appendChild(el("span", "gby", "🎁 " + it.claimedBy + " 님 선점"));
+  r.appendChild(m);
   const href = safeLink(it.link);
-  if (href){ const a = el("a", "glink", "🔗 " + linkLabel(href)); a.href = href; a.target = "_blank"; a.rel = "noopener"; c.appendChild(a); }
-  if (it.claimedBy){
-    const t = el("div", "gtaken");
-    t.append("🎁 ", el("b", "", it.claimedBy), " 님이 선점했어요");
-    const x = el("button", "btn sm", "선점 취소"); x.type = "button"; x.onclick = () => openClaim(it, "unclaim");
-    t.appendChild(x); c.appendChild(t);
-  } else {
-    const a = el("div", "gact");
-    const inp = el("input"); inp.type = "text"; inp.maxLength = 12; inp.placeholder = "내 닉네임"; inp.setAttribute("aria-label", it.name + " 선점할 닉네임");
-    const go = el("button", "btn primary", "선점하기"); go.type = "button";
-    go.onclick = () => openClaim(it, "claim", inp.value);
-    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); go.click(); } });
-    a.append(inp, go); c.appendChild(a);
-  }
+  if (href){ const a = el("a", "glk", "🔗"); a.href = href; a.target = "_blank"; a.rel = "noopener"; a.title = linkLabel(href); a.setAttribute("aria-label", it.name + " 링크 — " + linkLabel(href)); r.appendChild(a); }
   if (owner()){
-    const o = el("div", "gown");
-    const btn = (t, fn, cls) => { const b = el("button", "btn" + (cls ? " " + cls : ""), t); b.type = "button"; b.onclick = fn; o.appendChild(b); return b; };
-    btn("✎ 수정", () => openItem(it));
-    btn("↑", () => moveItem(it.id, -1)).disabled = i === 0;
-    btn("↓", () => moveItem(it.id, 1)).disabled = i === list.length - 1;
-    o.appendChild(el("span", "grow"));
-    if (it.claimedBy) btn("선점 해제", () => ownerRelease(it));
-    btn("삭제", () => deleteItem(it), "ghost danger");
-    c.appendChild(o);
+    const b = el("button", "btn gmore", "⋯"); b.type = "button"; b.setAttribute("aria-label", it.name + " 고치기");
+    b.onclick = () => openAct(it, i); r.appendChild(b);
+  } else if (it.claimedBy){
+    /* 선점한 친구 이름 칩 — 누르면 취소(개인 PIN). ✕ 로 누를 수 있다는 걸 보인다 (2026-10-08 검토) */
+    const t = el("button", "gtk", "🎁 " + it.claimedBy); t.type = "button"; t.title = it.claimedBy + " 님 선점 — 누르면 취소";
+    t.appendChild(el("span", "x", "✕")); t.onclick = () => openClaim(it, "unclaim");
+    r.appendChild(t);
+  } else {
+    const g = el("button", "btn primary gbtn", "선점"); g.type = "button"; g.onclick = () => openClaim(it, "claim");
+    r.appendChild(g);
   }
-  return c;
+  return r;
 }
+/* 주인 '⋯' — 수정 · 순서 · 선점 해제 · 삭제 */
+let actItem = null;
+function openAct(it, i){
+  actItem = it;
+  const n = ordered().length;
+  $("#actTitle").textContent = it.name;
+  $("#actSub").textContent = it.claimedBy ? "🎁 " + it.claimedBy + " 님이 선점했어요" : "아직 선점 안 됨";
+  $("#actUp").disabled = i === 0; $("#actDown").disabled = i === n - 1;
+  $("#actRelease").hidden = !it.claimedBy;
+  openModal("actModal");
+}
+const actThen = fn => () => { const it = actItem; closeModal("actModal"); if (it) afterNav(() => fn(it)); };
+$("#actEdit").onclick = actThen(it => openItem(it));
+$("#actUp").onclick = actThen(it => moveItem(it.id, -1));
+$("#actDown").onclick = actThen(it => moveItem(it.id, 1));
+$("#actRelease").onclick = actThen(it => ownerRelease(it));
+$("#actDel").onclick = actThen(it => deleteItem(it));
+$("#obToggle").onclick = () => { asFriend = !asFriend; renderAll(); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
 /* ═══ 친구 — 선점 · 취소 ═══ */
 let clItem = null, clMode = "claim";
@@ -463,6 +506,8 @@ function openClaim(it, mode, nick){
   $("#clNickFld").hidden = mode !== "claim";
   $("#cl_nick").value = (nick || "").trim();
   $("#cl_pin").value = "";
+  $("#cl_pin").placeholder = mode === "claim" ? "까먹지 않을 걸로" : "선점할 때 정한 개인 PIN";
+  $("#cl_go").disabled = false;
   $("#clPinLbl").textContent = mode === "claim" ? "개인 PIN — 나중에 취소할 때만 써요 (4자 이상)" : "개인 PIN";
   $("#clMsg").hidden = true;
   $("#cl_go").textContent = mode === "claim" ? "선점하기" : "선점 취소하기";
@@ -550,7 +595,6 @@ $("#exClear").onclick = () => {
     await ownerBatch((b2, op) => b2.update(C("wishView").doc(VID), { order: ordered().map(x => x.id).filter(x => !ex.some(e => e.id === x)), updatedAt: TSV(), op }));
   })(), "예시를 지웠어요");
 };
-$("#wlMore").onclick = () => { $("#wlSub").dataset.open = "1"; $("#wlSub").classList.remove("fold"); $("#wlMore").hidden = true; };
 
 /* 공유 — 친구용 링크 한 줄 (약속 잡자·밴드매니저와 같은 모양) */
 $("#shareBtn").onclick = () => {
@@ -618,8 +662,8 @@ $("#s_delete").onclick = async () => {
 
 /* ═══ 새 리스트 ═══ */
 const EXAMPLES = [
-  { name: "예시) 따뜻한 목도리", note: "회색이나 베이지면 좋아요", link: "" },
-  { name: "예시) 요즘 읽고 싶은 책", note: "아무 소설이나 추천해 주세요", link: "" }
+  { name: "따뜻한 목도리", note: "회색이나 베이지면 좋아요", link: "" },
+  { name: "요즘 읽고 싶은 책", note: "아무 소설이나 추천해 주세요", link: "" }
 ];
 $("#n_make").onclick = async () => {
   const name = $("#n_name").value.trim(), pin = $("#n_pin").value.trim();
