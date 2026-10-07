@@ -13,7 +13,11 @@
 <meta property="og:site_name" content="위시태그">
 <meta property="og:title" content="위시태그">
 <meta property="og:description" content="선물이 겹치지 않게 — 마음에 드는 선물을 골라 선점해 주세요">
-<meta property="og:image" content="https://benny3s.github.io/wishtag/og.png">
+<!-- 옛 지민 판이 같은 주소·같은 og.png 를 썼어서, 메신저가 옛 미리보기를 붙들고 있었다 → 이미지 이름을 바꿈 (2026-10-08) -->
+<meta property="og:image" content="https://benny3s.github.io/wishtag/og-wishtag.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://benny3s.github.io/wishtag/">
 <!-- 디자인은 약속 잡자와 **같은 파일** (2026-10-07 Benny: "약속잡자랑 비슷한 디자인으로") -->
 <link rel="stylesheet" href="../when/ui.css?v=2026-10-07a">
 <style>
@@ -47,9 +51,11 @@
 .grow .glk{flex:0 0 auto;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;
   border:1px solid rgba(var(--accent-rgb),.35);text-decoration:none;font-size:15px}
 .grow .gbtn{flex:0 0 auto;min-height:36px;padding:0 13px;font-size:13px}
-.grow .gtk{flex:0 0 auto;appearance:none;border:1px solid var(--line);background:var(--card);font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);
-  padding:0 10px;min-height:36px;border-radius:999px;cursor:pointer;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.grow .gtk .x{margin-left:4px;color:var(--warn)}
+/* 선점 칩 — 이름만 '…' 로 줄이고 ✕ 는 늘 보이게 (긴 닉네임 '우아한도라이' 에서 ✕ 가 잘렸다 · 2026-10-08) */
+.grow .gtk{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;appearance:none;border:1px solid var(--line);background:var(--card);font:inherit;
+  font-size:12.5px;font-weight:700;color:var(--muted);padding:0 10px;min-height:36px;border-radius:999px;cursor:pointer;max-width:132px}
+.grow .gtk .nm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .gtk .x{flex:0 0 auto;color:var(--warn)}
 .grow.taken .gname{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25)}
 .grow .gmore{flex:0 0 auto;width:36px;min-height:36px;padding:0;font-size:16px}
 /* 관리 ↔ 친구 화면 */
@@ -257,7 +263,7 @@
      wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
        /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
    개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
-const BUILD = "2026-10-08a";
+const BUILD = "2026-10-08b";
 
 /* ── 작은 도구 ── */
 function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
@@ -468,8 +474,8 @@ function giftRow(it, i){
     b.onclick = () => openAct(it, i); r.appendChild(b);
   } else if (it.claimedBy){
     /* 선점한 친구 이름 칩 — 누르면 취소(개인 PIN). ✕ 로 누를 수 있다는 걸 보인다 (2026-10-08 검토) */
-    const t = el("button", "gtk", "🎁 " + it.claimedBy); t.type = "button"; t.title = it.claimedBy + " 님 선점 — 누르면 취소";
-    t.appendChild(el("span", "x", "✕")); t.onclick = () => openClaim(it, "unclaim");
+    const t = el("button", "gtk"); t.type = "button"; t.title = it.claimedBy + " 님 선점 — 누르면 취소";
+    t.append("🎁", el("span", "nm", it.claimedBy), el("span", "x", "✕")); t.onclick = () => openClaim(it, "unclaim");
     r.appendChild(t);
   } else {
     const g = el("button", "btn primary gbtn", "선점"); g.type = "button"; g.onclick = () => openClaim(it, "claim");
