@@ -1,32 +1,24 @@
 # 위시태그 (Wishtag)
 
-생일 위시리스트 페이지예요. 친구들이 항목을 **선점**해서 선물이 겹치지 않게 해줘요.
+선물이 겹치지 않게 — 누구나 위시리스트를 만들고, **링크만 보내면** 친구들이 골라서 선점하는 페이지.
 
 - 페이지: https://benny3s.github.io/wishtag/
-- 프론트엔드: GitHub Pages에 올린 정적 파일(`index.html`, `style.css`, `app.js`). 빌드 과정 없음
-- 백엔드: Google Apps Script 웹 앱(URL은 `app.js`의 `API`). 데이터는 ScriptProperties에 저장됨
+- 디자인·공용 코드: 약속 잡자(`/when/`)의 `ui.css`·`core.js` 를 같이 씀 → 그쪽을 고치면 `index.html` 의 `?v=` 도 올리기
+- 저장: Firebase `benny-apps` Firestore (밴드매니저·약속 잡자와 같은 프로젝트). 규칙은 `benny3s/benny-apps` 의 `firestore.rules` '위시태그' 부분
 
-## 알아둘 것
+## 구조
 
-- 백엔드와는 **JSONP로만** 통신해요. `fetch`로 바꾸면 CORS 때문에 동작하지 않아요.
-- Apps Script는 약 8KB가 넘는 GET 요청을 거절해요. 그래서 `app.js`의 `MAX_URL`에서 요청 길이를 미리 막아둬요.
-- PIN과 선점 암호는 SHA-256 해시로만 보내요. `crypto.subtle`은 https나 `localhost`에서만 동작해요. `file://`로 열면 안 돼요.
+| 경로 | 내용 | 누가 |
+|---|---|---|
+| `wishes/{wid}` | 목록 — 이름·🔒 | 누구나 봄 |
+| `wishOwner/{K}` | K = sha256(wid:PIN) → 친구 화면 id | 경로를 아는 주인만 |
+| `wishOps/{op}` | 주인 확인표 — 고칠 때마다 같은 batch 로 만듦 | 아무도 못 읽음 |
+| `wishView/{v}` | 친구 화면 (제목·소개·순서), v = 무작위 | 링크(`?v=`)를 받은 사람 |
+| `wishView/{v}/items/{id}` | 선물 | 주인은 전부, 친구는 선점·취소만 |
 
-## 로컬에서 실행
+- 목록에서 들어가면 PIN 을 묻고, 맞으면 주인(추가·수정·순서·설정). 친구는 공유 링크로만 들어와 **닉네임 + 개인 PIN** 으로 선점, 같은 개인 PIN 으로 취소.
+- 개인 PIN: 선점 땐 `sha256(sha256(PIN))` 만 남기고, 취소 땐 `sha256(PIN)` 을 보내 규칙이 대조. 원래 지민 위시태그(minim0.github.io/wishtag, Apps Script)에서 옮겨 온 선점도 예전 암호로 취소됨.
 
-```bash
-python -m http.server 8770
-```
+## 로컬에서
 
-실행한 뒤 http://localhost:8770 을 열면 돼요. 로컬에서도 실제 서버 데이터를 쓰니까 선점이나 관리자 기능은 조심해서 테스트하세요.
-
-## Apps Script를 고칠 때
-
-"새 배포"를 누르면 URL이 바뀌어요. 아래 순서로 배포하세요.
-
-1. 코드 수정 후 저장
-2. **배포 → 배포 관리**
-3. 기존 배포 옆 연필 아이콘 → 버전에서 **새 버전** 선택
-4. 배포
-
-접근 설정은 "다음 사용자 인증 정보로 실행: 나", "액세스 권한이 있는 사용자: 모든 사용자"로 둬야 해요.
+`secretary/` 를 웹 서버로 열고(`/when/` 이 옆에 있어야 함) http://localhost:8780/wishtag/ — 실제 Firebase 를 씀.

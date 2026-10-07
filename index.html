@@ -1,125 +1,676 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-theme="">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>위시태그</title>
-<meta name="description" content="마음에 드는 선물을 골라 선점해주세요. 선점된 항목은 다른 분과 겹치지 않아요.">
-<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="선물이 겹치지 않게 — 위시리스트를 만들고 링크만 보내면 친구들이 골라 선점해요">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b835b">
 <meta property="og:type" content="website">
-<meta property="og:title" content="지민의 Birthday 위시태그">
-<meta property="og:description" content="마음에 드는 선물을 골라 선점해주세요. 선물이 겹치지 않게!">
-<meta property="og:url" content="https://benny3s.github.io/wishtag/">
+<meta property="og:site_name" content="위시태그">
+<meta property="og:title" content="위시태그">
+<meta property="og:description" content="선물이 겹치지 않게 — 마음에 드는 선물을 골라 선점해 주세요">
 <meta property="og:image" content="https://benny3s.github.io/wishtag/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F3F6F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#151A14" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 6a2 2 0 0 1 2-2h10.2a2 2 0 0 1 1.4.6l10 10a2 2 0 0 1 0 2.8l-10.2 10.2a2 2 0 0 1-2.8 0l-10-10A2 2 0 0 1 4 16.2z' fill='%232F5D50'/%3E%3Ccircle cx='10.5' cy='10.5' r='2.5' fill='%23F3F6F2'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://script.google.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="style.css">
+<!-- 디자인은 약속 잡자와 **같은 파일** (2026-10-07 Benny: "약속잡자랑 비슷한 디자인으로") -->
+<link rel="stylesheet" href="../when/ui.css?v=2026-10-07a">
+<style>
+/* ═══ 위시태그에만 있는 것 — 선물 카드 · 목록 · 잠금 ═══ */
+.lockcard{text-align:center;padding:30px 18px}
+.lockcard input{max-width:180px;text-align:center;letter-spacing:.3em;margin:0 auto}
+.mine-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:20px 0 2px;padding-top:12px;border-top:1px solid var(--line);
+  font-size:12px;font-weight:700;color:var(--muted)}
+.mine-h span:last-child{font-weight:500;font-size:11.5px}
+.pkrow{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.pkrow:last-child{border-bottom:0}
+.pkrow .pk1{border-bottom:0;flex:1 1 auto}
+.pkrow .pkdel{flex:0 0 auto;width:36px;min-height:36px;padding:0;color:var(--muted)}
+.pk1.on::after{content:" ·  지금 보는 리스트"}
+.wl-head h2{font-size:21px;letter-spacing:-.03em;margin:0}
+.wl-sub{white-space:pre-wrap;color:var(--ink);font-size:14px;line-height:1.65;margin:10px 0 0}
+.wl-sub.fold{max-height:7.2em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
+.wl-more{appearance:none;border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:700;color:var(--accent);padding:4px 0;cursor:pointer}
+.wl-stat{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
+.wl-stat span{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--card)}
+.wl-stat span.left{color:var(--accent);border-color:rgba(var(--accent-rgb),.45)}
+.ownerbar{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:8px 10px;border-radius:12px;background:rgba(var(--accent-rgb),.08);font-size:12.5px;font-weight:700;color:var(--accent)}
+.gift{position:relative}
+.gift .gnum{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.02em}
+.gift .gnum .ex{margin-left:6px;font-size:11px;color:#8a6d1f;background:rgba(138,109,31,.12);border-radius:999px;padding:1px 7px}
+.gift h3{font-size:16.5px;font-weight:800;letter-spacing:-.02em;margin:3px 0 0;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
+.gift .gnote{color:var(--muted);font-size:13.5px;margin:3px 0 0;white-space:pre-wrap}
+.gift .glink{display:inline-flex;align-items:center;gap:4px;margin:8px 0 0;font-size:13px;font-weight:700;color:var(--accent);text-decoration:none;
+  border:1px solid rgba(var(--accent-rgb),.35);border-radius:999px;padding:4px 11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gift .gact{display:flex;gap:7px;align-items:center;margin:12px 0 0}
+.gift .gact input{flex:1 1 auto;min-width:0}
+.gift .gact .btn{flex:0 0 auto}
+.gift.claimed{background:var(--soft)}
+.gift.claimed h3{color:var(--muted)}
+.gift .gtaken{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:13.5px}
+.gift .gtaken b{color:var(--accent)}
+.gift .gtaken .btn{margin-left:auto}
+.gift .gown{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--line)}
+.gift .gown .btn{min-height:34px;padding:0 11px;font-size:12.5px}
+.gift .gown .grow{flex:1 1 auto}
+.addbtn{width:100%;margin:0 0 12px}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-<div id="inappBanner" class="inapp" role="region" aria-label="브라우저 안내" hidden>
-  <svg class="inapp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20L12 3Zm0 6v5m0 3v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <div class="inapp-body">
-    <p class="inapp-text" id="inappText"></p>
-    <div class="inapp-actions">
-      <button type="button" class="btn btn-sm btn-primary" id="inappOpen" hidden></button>
-      <button type="button" class="btn btn-sm btn-ghost" id="inappCopy">링크 복사</button>
-    </div>
+<div class="iab" id="iabBar" hidden>
+  <div class="iabtx"><b id="iabWho">앱 안에서 열렸어요</b><span>여기선 많이 느려요. 아래를 누르면 크롬·사파리에서 같은 화면이 바로 열립니다.</span></div>
+  <div class="iabgo">
+    <button class="btn primary sm" id="iabOpen" type="button">👉 크롬 · 사파리로 열기</button>
+    <button class="btn ghost sm" id="iabSkip" type="button">그냥 볼게요</button>
   </div>
-  <button type="button" class="icon-btn inapp-close" id="inappClose" aria-label="안내 닫기">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-  </button>
 </div>
 
-<header class="masthead">
-  <div class="topbar">
-    <span class="eyebrow">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7.4a1.5 1.5 0 0 1 1 .4l7.7 7.7a1.5 1.5 0 0 1 0 2.1l-7.4 7.4a1.5 1.5 0 0 1-2.1 0l-7.7-7.7a1.5 1.5 0 0 1-.4-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></svg>
-      WISHTAG
-    </span>
-    <div class="admin-entry">
-      <button type="button" class="chip" id="adminToggle" aria-expanded="false" aria-controls="pinForm">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
-        <span id="adminToggleLabel">관리자</span>
-      </button>
-      <form class="pin-form" id="pinForm" novalidate hidden>
-        <label class="sr-only" for="pinInput">관리자 PIN</label>
-        <input id="pinInput" type="password" inputmode="text" autocomplete="off" placeholder="PIN" maxlength="64" required>
-        <button type="submit" class="btn btn-sm btn-primary">확인</button>
-      </form>
-    </div>
-  </div>
-
-  <h1 id="heading" class="heading is-loading">위시태그</h1>
-  <p id="subheading" class="subheading"></p>
-
-  <div class="progress" id="progress" hidden>
-    <div class="progress-label">
-      <span>선점 현황</span>
-      <span class="mono" id="progressText"></span>
-    </div>
-    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
-  </div>
+<header>
+  <button class="titlebtn" id="titleBtn" type="button" title="위시태그">
+    <span class="mark" aria-hidden="true">위</span>
+    <span class="tt"><h1>위시태그</h1><p class="sub" id="subtitle">선물이 겹치지 않게</p></span>
+  </button>
+  <span class="hact">
+    <button class="btn pickbtn" id="pickBtn" type="button"><span class="pbt" id="pickName">🎁 리스트 고르기</span><span class="pcar">▾</span></button>
+  </span>
 </header>
 
-<section class="admin-panel" id="adminPanel" aria-label="관리자 패널" hidden>
-  <div class="admin-head">
-    <h2>관리자 패널</h2>
-    <button type="button" class="btn btn-sm btn-ghost" id="adminLogout">관리자 모드 끝내기</button>
+<!-- 처음 화면 — 리스트를 아직 안 골랐을 때 -->
+<section id="view-home" hidden>
+  <div class="card">
+    <h2 style="margin:0 0 4px">내 위시리스트 만들기</h2>
+    <p class="hint">갖고 싶은 선물을 적어 두고 <b>링크만 보내면</b>, 친구들이 골라서 선점해요. 같은 선물이 겹치지 않아요.</p>
+    <button class="btn primary wide" id="homeNew" type="button">＋ 새 위시리스트 만들기</button>
   </div>
-
-  <div class="admin-grid">
-    <form class="admin-card" id="addForm" novalidate>
-      <h3>항목 추가</h3>
-      <label>이름 <input name="name" maxlength="80" required placeholder="예) 테클라 주방 손수건"></label>
-      <label>메모 <input name="note" maxlength="120" placeholder="색상·사이즈 등 (선택)"></label>
-      <label>링크 <input name="link" type="text" inputmode="url" autocapitalize="off" spellcheck="false" maxlength="600" placeholder="https:// (선택)"></label>
-      <button type="submit" class="btn btn-primary">추가하기</button>
-    </form>
-
-    <form class="admin-card" id="headingForm" novalidate>
-      <h3>제목 · 설명</h3>
-      <label>제목 <input name="heading" maxlength="80" required></label>
-      <label>설명 <textarea name="subheading" rows="7" maxlength="700"></textarea></label>
-      <button type="submit" class="btn btn-primary">저장하기</button>
-    </form>
-
-    <form class="admin-card" id="pinChangeForm" novalidate>
-      <h3>PIN 변경</h3>
-      <label>현재 PIN <input name="current" type="password" autocomplete="off" required></label>
-      <label>새 PIN <input name="next" type="password" autocomplete="off" minlength="4" required></label>
-      <label>새 PIN 확인 <input name="confirm" type="password" autocomplete="off" minlength="4" required></label>
-      <button type="submit" class="btn btn-primary">PIN 바꾸기</button>
-    </form>
-
-    <div class="admin-card admin-card-misc">
-      <h3>정리</h3>
-      <p class="muted">카드마다 <b>수정 · 해제 · 삭제</b> 버튼이 보여요. 삭제와 해제는 한 번 더 눌러야 실행돼요.</p>
-      <button type="button" class="btn btn-danger-ghost" id="clearExamples" hidden></button>
+  <!-- 처음 온 사람에게 샘플 화면 (가짜 데이터로 찍은 것) -->
+  <div class="card samples">
+    <h2 style="margin:0 0 2px">이런 화면이에요</h2>
+    <p class="hint" style="margin:0 0 10px">옆으로 넘겨 보세요 · 샘플 리스트 화면</p>
+    <div class="shots">
+      <figure><img src="samples/list.webp" alt="친구가 보는 위시리스트" loading="lazy" width="600" height="860"><figcaption><b>① 링크로 들어온 친구</b> 마음에 드는 선물을 골라요</figcaption></figure>
+      <figure><img src="samples/claim.webp" alt="닉네임과 개인 PIN 으로 선점" loading="lazy" width="600" height="860"><figcaption><b>② 선점</b> 닉네임 + 개인 PIN (취소할 때 써요)</figcaption></figure>
+      <figure><img src="samples/owner.webp" alt="주인은 PIN 으로 들어와 선물을 추가·수정" loading="lazy" width="600" height="860"><figcaption><b>③ 주인</b> PIN 으로 들어와 선물 추가·수정</figcaption></figure>
     </div>
   </div>
 </section>
 
-<main>
-  <div class="grid" id="grid" aria-live="polite" aria-busy="true"></div>
-</main>
+<!-- 주인 확인 — 목록에서 들어올 때 (친구는 링크로만) -->
+<section id="view-lock" hidden>
+  <div class="card lockcard">
+    <div style="font-size:30px">🔒</div>
+    <h2 style="margin:6px 0 2px" id="lockName"></h2>
+    <p class="hint" style="margin:0 0 16px" id="lockHint">주인만 들어갈 수 있어요. 친구는 주인이 보낸 링크로 들어와요.</p>
+    <input type="text" id="lockPin" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN">
+    <button class="btn primary wide" id="lockGo" type="button" style="margin-top:12px">들어가기</button>
+  </div>
+</section>
 
-<footer class="footer">
-  <span class="mono" id="syncLabel">불러오는 중…</span>
-  <button type="button" class="text-btn mono" id="refreshBtn">새로고침</button>
-</footer>
+<!-- 위시리스트 — 친구(링크) 와 주인(PIN) 이 같은 화면, 주인에게만 고치는 버튼 -->
+<section id="view-list" hidden>
+  <div class="card wl-head">
+    <h2 id="wlHeading"></h2>
+    <p class="wl-sub" id="wlSub"></p>
+    <button class="wl-more" id="wlMore" type="button" hidden>더 보기 ▾</button>
+    <div class="wl-stat" id="wlStat"></div>
+    <div class="ownerbar" id="ownerBar" hidden>🔑 주인으로 보는 중 — 선물을 고칠 수 있어요</div>
+    <div class="sheettools" id="ownerTools" hidden>
+      <button class="btn soft" id="shareBtn" type="button">🔗 친구에게 공유</button>
+      <button class="btn" id="setBtn" type="button">⚙ 리스트 설정</button>
+    </div>
+  </div>
+  <button class="btn primary addbtn" id="addBtn" type="button" hidden>＋ 선물 추가</button>
+  <button class="btn ghost danger addbtn" id="exClear" type="button" hidden></button>
+  <div id="gifts"></div>
+</section>
 
-<div class="sheet" id="sheet" hidden></div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer id="foot"></footer>
+<p class="more"><a href="https://benny3s.github.io/" target="_blank" rel="noopener">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
+</div>
 
-<script src="app.js" defer></script>
+<!-- ══════════ 리스트 고르기 ══════════ -->
+<div class="modal" id="pickModal" hidden>
+  <div class="sheet tall" role="dialog" aria-modal="true">
+    <div class="spread">
+      <h2 style="margin:0">리스트 고르기</h2>
+      <span class="row tight" style="flex:0 0 auto;gap:6px">
+        <button class="btn sm" id="homeBtn" type="button">🏠 홈으로</button>
+        <button class="btn ghost" type="button" data-close>닫기</button>
+      </span>
+    </div>
+    <button class="btn primary" id="newBtn" type="button" style="width:100%;margin-top:12px">＋ 새 위시리스트 만들기</button>
+    <button class="btn" id="allBtn" type="button" style="width:100%;margin-top:8px">🔎 등록된 리스트 찾기</button>
+    <button class="btn soft" id="introBtn" type="button" style="width:100%;margin-top:8px">📣 위시태그 소개하기</button>
+    <div id="mineWrap" hidden>
+      <div class="mine-h"><span>내 리스트</span><span>✕ = 이 기기에서만 지우기</span></div>
+      <div class="list" id="mineList"></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════ 등록된 리스트 전부 ══════════ -->
+<div class="modal" id="allModal" hidden>
+  <div class="sheet tall" role="dialog" aria-modal="true">
+    <div class="spread">
+      <h2 style="margin:0">등록된 리스트</h2>
+      <button class="btn ghost" type="button" data-close>닫기</button>
+    </div>
+    <p class="hint" style="margin:6px 0 0">주인은 PIN 으로 들어가요. 친구는 주인이 보낸 링크로 들어와요.</p>
+    <div class="list" id="allList" style="margin-top:10px"></div>
+  </div>
+</div>
+<!-- ══════════ 새 위시리스트 ══════════ -->
+<div class="modal" id="newModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:420px">
+    <div class="spread">
+      <h2 style="margin:0">새 위시리스트</h2>
+      <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
+    </div>
+    <label class="fld"><span>리스트 이름 — 목록에 보여요</span><input type="text" id="n_name" maxlength="20" placeholder="예: 지민 생일 위시리스트"></label>
+    <label class="fld"><span>PIN (선택) — 숫자 4~8자리. 걸면 PIN 아는 사람만 고칠 수 있어요</span>
+      <input type="text" id="n_pin" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="비우면 누구나 고칠 수 있어요"></label>
+    <p class="hint" style="margin:0">만들면 예시 선물 2개가 들어가요. 바꾸거나 지우고 내 선물을 넣으세요.</p>
+    <button class="btn primary wide" id="n_make" type="button" style="margin-top:12px">만들기 →</button>
+  </div>
+</div>
+<!-- ══════════ 선물 추가·수정 (주인) ══════════ -->
+<div class="modal" id="itemModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:440px">
+    <div class="spread">
+      <h2 style="margin:0" id="itemTitle">선물 추가</h2>
+      <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
+    </div>
+    <label class="fld"><span>선물 이름</span><input type="text" id="i_name" maxlength="60" placeholder="예: 테클라 주방 손수건"></label>
+    <label class="fld"><span>설명 (선택) — 색·사이즈 등</span><input type="text" id="i_note" maxlength="200" placeholder="예: 하바나브라운"></label>
+    <label class="fld"><span>링크 (선택)</span><input type="text" id="i_link" maxlength="600" inputmode="url" placeholder="https://"></label>
+    <button class="btn primary wide" id="i_save" type="button">저장</button>
+  </div>
+</div>
+<!-- ══════════ 선점 · 취소 (친구) ══════════ -->
+<div class="modal" id="claimModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:420px">
+    <div class="spread">
+      <h2 style="margin:0" id="clTitle">선점하기</h2>
+      <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
+    </div>
+    <p style="margin:8px 0 2px;font-weight:800" id="clItem"></p>
+    <p class="hint" style="margin:0 0 12px" id="clText"></p>
+    <label class="fld" id="clNickFld"><span>닉네임</span><input type="text" id="cl_nick" maxlength="12" placeholder="예: 로지포지"></label>
+    <label class="fld"><span id="clPinLbl">개인 PIN — 나중에 취소할 때만 써요 (4자 이상)</span>
+      <input type="text" id="cl_pin" maxlength="40" autocomplete="off" placeholder="까먹지 않을 걸로"></label>
+    <p class="fldmsg bad" id="clMsg" hidden></p>
+    <button class="btn primary wide" id="cl_go" type="button">선점하기</button>
+  </div>
+</div>
+<!-- ══════════ 리스트 설정 (주인) ══════════ -->
+<div class="modal" id="setModal" hidden>
+  <div class="sheet tall" role="dialog" aria-modal="true" style="max-width:460px">
+    <div class="spread">
+      <h2 style="margin:0">리스트 설정</h2>
+      <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
+    </div>
+    <label class="fld"><span>리스트 이름 — 목록에 보여요</span><input type="text" id="s_name" maxlength="20"></label>
+    <label class="fld"><span>제목 — 친구들이 보는 맨 위 큰 글씨</span><input type="text" id="s_heading" maxlength="40"></label>
+    <label class="fld"><span>소개 글 (선택)</span><textarea id="s_sub" maxlength="1000" rows="5"></textarea></label>
+    <button class="btn primary wide" id="s_save" type="button">저장</button>
+    <div class="fld" style="margin-top:18px"><span id="s_pinLbl">PIN</span>
+      <div class="row nowrap"><input type="text" id="s_pin" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="새 PIN (비우면 해제)" style="flex:1 1 auto">
+        <button class="btn" id="s_pinSave" type="button">바꾸기</button></div>
+    </div>
+    <details class="nmore" style="margin-top:14px">
+      <summary>리스트 지우기</summary>
+      <p class="hint">선물·선점 기록까지 전부 지워지고 되돌릴 수 없어요.</p>
+      <button class="btn ghost danger" id="s_delete" type="button">이 리스트 지우기</button>
+    </details>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../when/core.js?v=2026-10-07a"></script>
+<script>/* 위시태그 — benny3s.github.io/wishtag/  (2026-10-07, Apps Script 판을 Firebase 로 새로 만듦)
+   원본: 지민 생일 위시태그(minim0.github.io/wishtag — 그대로 둠). 이건 누구나 자기 리스트를 만드는 판.
+   저장 (규칙: secretary/benny-apps/firestore.rules 의 '위시태그')
+     wishes/{wid}            목록 — 이름·🔒 (누구나 봄)
+     wishOwner/{K}           K = sha256(wid:PIN) → {wid, v, n}. 주인만 경로를 안다
+     wishOps/{op}            주인 확인표 — 고칠 때마다 같은 batch 로 만든다 (아무도 못 읽음)
+     wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
+       /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
+   개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
+const BUILD = "2026-10-07a";
+
+/* ── 작은 도구 ── */
+function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
+async function sha256(t){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join(""); }
+function rid(n){ const a = "abcdefghijkmnpqrstuvwxyz23456789"; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(x => a[x % a.length]).join(""); }
+function pinOk(p){ return /^\d{4,8}$/.test(p); }
+function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function safeLink(u){ u = String(u || "").trim(); if (!u) return ""; if (!/^https?:\/\//i.test(u)) u = "https://" + u; try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch(e){ return ""; } }
+function linkLabel(u){ try { return new URL(u).hostname.replace(/^www\./, ""); } catch(e){ return "링크"; } }
+const C = n => db.collection(n);
+const TSV = () => firebase.firestore.FieldValue.serverTimestamp();
+
+/* ── 상태 ── */
+let LISTS = [], listsReady = false;          // 목록
+let WID = "", KEY = "", VID = "";            // 지금 리스트 · 주인 열쇠(있으면 주인) · 친구 화면 id
+let VIEW = null, ITEMS = [], unsub = [];
+let opening = false;                         // 링크·목록에서 여는 중 — 처음 화면이 잠깐 비치지 않게
+const owner = () => !!KEY;
+const listOf = id => LISTS.find(x => x.id === id) || null;
+
+/* 이 기기에서 연 리스트 — 열쇠(K)·친구 화면(v) 를 기억 */
+function mineIds(){ try { const a = JSON.parse(ls("wt_mine") || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+function mineAdd(wid){ const a = mineIds().filter(x => x !== wid); a.unshift(wid); ls("wt_mine", JSON.stringify(a.slice(0, 20))); }
+function mineForget(wid){
+  const b = listOf(wid);
+  if (!confirm("‘" + (b ? b.name : "이 리스트") + "’ 를 이 기기 목록에서 지울까요?\n리스트는 그대로 있고, 다시 들어가려면 PIN 이 필요해요.")) return;
+  ls("wt_mine", JSON.stringify(mineIds().filter(x => x !== wid)));
+  ls("wt_key:" + wid, ""); ls("wt_v:" + wid, "");
+  if (wid === WID){ closeModal("pickModal"); afterNav(goHome); } else renderPick();
+}
+
+/* ── 주인 쓰기: 같은 batch 에 확인표(wishOps)를 만들고 그 id 를 op 에 ── */
+async function ownerBatch(fill){
+  if (!KEY) throw new Error("주인만 고칠 수 있어요");
+  const b = db.batch(), op = rid(20);
+  b.set(C("wishOps").doc(op), { wid: WID, k: KEY, at: TSV() });
+  fill(b, op);
+  await b.commit();
+}
+/** 지우기 — 정해진 id 의 확인표 + 지우기 (규칙: x?_…) */
+function delOp(b, id){ b.set(C("wishOps").doc(id), { wid: WID, k: KEY, at: TSV() }); }
+async function run(p, okMsg){
+  try { await p; if (okMsg) setStatus(okMsg, "ok"); return true; }
+  catch(e){ setStatus("실패 — " + errText(e), "err"); return false; }
+}
+
+/* ═══ 목록 ═══ */
+function watchLists(){
+  C("wishes").onSnapshot(s => {
+    LISTS = s.docs.map(d => Object.assign({ id: d.id }, d.data()))
+      .sort((a, b) => ((b.createdAt && b.createdAt.toMillis()) || 0) - ((a.createdAt && a.createdAt.toMillis()) || 0));
+    listsReady = true; renderAll();
+    if (!$("#pickModal").hidden || !$("#allModal").hidden) renderPick();
+  }, e => setStatus("목록을 못 불러왔어요 — " + errText(e), "err"));
+}
+function listRow(b, onDel){
+  const row = el("div", "pkrow");
+  const go = el("button", "pk1" + (b.id === WID ? " on" : ""), (b.locked ? "🔒 " : "") + b.name);
+  go.type = "button";
+  go.onclick = () => { if (!$("#allModal").hidden) closeModal("allModal"); if (!$("#pickModal").hidden) closeModal("pickModal"); if (b.id !== WID || !owner()) afterNav(() => openOwner(b.id)); };
+  row.appendChild(go);
+  if (onDel){
+    const x = el("button", "btn x pkdel", "✕"); x.type = "button"; x.setAttribute("aria-label", b.name + " 이 기기 목록에서 지우기");
+    x.onclick = () => onDel(b.id); row.appendChild(x);
+  }
+  return row;
+}
+function renderPick(){
+  const mine = mineIds().map(listOf).filter(Boolean);
+  $("#mineWrap").hidden = !mine.length;
+  const mb = $("#mineList"); mb.innerHTML = "";
+  mine.forEach(b => mb.appendChild(listRow(b, mineForget)));
+  const box = $("#allList"); box.innerHTML = "";
+  if (!LISTS.length){ box.innerHTML = '<p class="hint">아직 리스트가 없어요.</p>'; return; }
+  LISTS.forEach(b => box.appendChild(listRow(b, null)));
+}
+
+/* ═══ 열기 ═══ */
+function closeList(){ unsub.forEach(f => { try { f(); } catch(e){} }); unsub = []; WID = ""; KEY = ""; VID = ""; VIEW = null; ITEMS = []; }
+function setUrl(){
+  const q = VID && !owner() ? "?v=" + VID : (WID ? "?w=" + WID : "");
+  try { history.replaceState(history.state, "", location.pathname + q); } catch(e){}
+}
+/** 목록에서 — 주인으로 들어가기 (PIN 이 있으면 묻는다) */
+async function openOwner(wid, pin){
+  opening = true; try { await openOwner_(wid, pin); } finally { opening = false; renderAll(); }
+}
+async function openOwner_(wid, pin){
+  const b = listOf(wid) || await C("wishes").doc(wid).get().then(s => s.exists ? Object.assign({ id: s.id }, s.data()) : null).catch(() => null);
+  if (!b){ setStatus("없는 리스트예요", "err"); return; }
+  let k = pin !== undefined ? await sha256(wid + ":" + pin) : ls("wt_key:" + wid);
+  if (!k && !b.locked) k = await sha256(wid + ":");
+  if (!k){ closeList(); WID = wid; renderAll(); showLock(b); return; }
+  const o = await C("wishOwner").doc(k).get().catch(() => null);
+  if (!o || !o.exists || o.data().wid !== wid){
+    ls("wt_key:" + wid, "");
+    if (pin !== undefined || b.locked){ closeList(); WID = wid; renderAll(); showLock(b, pin !== undefined ? "PIN 이 맞지 않아요" : "PIN 이 바뀌었어요 — 다시 넣어주세요"); return; }
+    setStatus("리스트를 열지 못했어요", "err"); return;
+  }
+  ls("wt_key:" + wid, k); ls("wt_v:" + wid, o.data().v); mineAdd(wid);
+  watchView(o.data().v, wid, k);
+}
+/** 링크로 — 친구 화면. 이 기기가 주인이면 주인으로 */
+async function openView(v){
+  opening = true; try { await openView_(v); } finally { opening = false; renderAll(); }
+}
+async function openView_(v){
+  const s = await C("wishView").doc(v).get().catch(() => null);
+  if (!s || !s.exists){ closeList(); renderAll(); setStatus("없는 리스트예요 — 링크를 확인해 주세요", "err"); return; }
+  const wid = s.data().wid, k = ls("wt_key:" + wid);
+  let mine = "";
+  if (k){ const o = await C("wishOwner").doc(k).get().catch(() => null); if (o && o.exists && o.data().wid === wid) mine = k; }
+  watchView(v, wid, mine);
+}
+function watchView(v, wid, k){
+  closeList();
+  WID = wid; VID = v; KEY = k || "";
+  setUrl();
+  unsub.push(C("wishView").doc(v).onSnapshot(s => {
+    if (!s.exists){ VIEW = null; setStatus("이 리스트는 지워졌어요", "err"); closeList(); setUrl(); renderAll(); return; }
+    VIEW = s.data(); renderAll();
+  }, e => setStatus("불러오기 실패 — " + errText(e), "err")));
+  unsub.push(C("wishView").doc(v).collection("items").onSnapshot(s => {
+    ITEMS = s.docs.map(d => Object.assign({ id: d.id }, d.data())); renderAll();
+  }));
+  renderAll();
+}
+function showLock(b, msg){
+  $("#lockName").textContent = (b.locked ? "🔒 " : "") + b.name;
+  $("#lockHint").textContent = msg || "주인만 들어갈 수 있어요. 친구는 주인이 보낸 링크로 들어와요.";
+  $("#lockHint").style.color = msg ? "var(--warn)" : "";
+  $("#lockPin").value = "";
+  $("#view-lock").hidden = false;
+  setTimeout(() => $("#lockPin").focus(), 60);
+}
+function goHome(){ closeList(); ls("wt_last", ""); setUrl(); renderAll(); window.scrollTo(0, 0); }
+/** 창을 닫으면 뒤로가기가 한 번 일어난다 → 그게 끝난 뒤에 화면·주소를 바꾼다 */
+function afterNav(fn){
+  let done = false;
+  const go = () => { if (done) return; done = true; window.removeEventListener("popstate", go); setTimeout(fn, 0); };
+  window.addEventListener("popstate", go); setTimeout(go, 400);
+}
+
+/* ═══ 화면 ═══ */
+function ordered(){
+  const ord = (VIEW && VIEW.order) || [], pos = id => { const i = ord.indexOf(id); return i < 0 ? 1e6 : i; };
+  const ms = t => (t && t.toMillis) ? t.toMillis() : 0;
+  return ITEMS.slice().sort((a, b) => pos(a.id) - pos(b.id) || ms(a.createdAt) - ms(b.createdAt));
+}
+function renderAll(){
+  const b = listOf(WID);
+  $("#pickName").textContent = b ? (b.locked ? "🔒 " : "") + b.name : "🎁 리스트 고르기";
+  document.title = VIEW ? (VIEW.heading || (b && b.name) || "위시리스트") + " — 위시태그" : "위시태그";
+  $("#foot").textContent = "위시태그 " + BUILD;
+  const showList = !!(VID && VIEW);
+  $("#view-list").hidden = !showList;
+  $("#view-lock").hidden = showList || !WID || !!VID || $("#view-lock").hidden;   // 잠금 화면은 showLock 이 연다
+  $("#view-home").hidden = showList || !!WID || !!VID || opening;
+  if (!showList) return;
+  $("#wlHeading").textContent = VIEW.heading || (b && b.name) || "위시리스트";
+  const sub = VIEW.subheading || "";
+  $("#wlSub").textContent = sub; $("#wlSub").hidden = !sub;
+  const long = sub.split("\n").length > 5 || sub.length > 220;
+  if (!$("#wlSub").dataset.open) $("#wlSub").classList.toggle("fold", long);
+  $("#wlMore").hidden = !long || !!$("#wlSub").dataset.open;
+  const list = ordered(), taken = list.filter(x => x.claimedBy).length;
+  const st = $("#wlStat"); st.innerHTML = "";
+  st.append(el("span", "", "선물 " + list.length), el("span", "left", "남은 선물 " + (list.length - taken)), el("span", "", "선점 " + taken));
+  $("#ownerBar").hidden = $("#ownerTools").hidden = $("#addBtn").hidden = !owner();
+  const ex = list.filter(x => x.example).length;
+  $("#exClear").hidden = !owner() || !ex;
+  $("#exClear").textContent = "예시 선물 " + ex + "개 지우기";
+  renderGifts(list);
+}
+function renderGifts(list){
+  const box = $("#gifts"); box.innerHTML = "";
+  if (!list.length){ box.appendChild(el("div", "card empty", owner() ? "아직 선물이 없어요. 위의 ＋ 선물 추가로 넣어 보세요." : "아직 선물이 없어요.")); return; }
+  list.forEach((it, i) => box.appendChild(giftCard(it, i, list)));
+}
+function giftCard(it, i, list){
+  const c = el("div", "card gift" + (it.claimedBy ? " claimed" : ""));
+  const num = el("div", "gnum", "No." + (i + 1));
+  if (it.example) num.appendChild(el("span", "ex", "예시"));
+  c.append(num, el("h3", "", it.name));
+  if (it.note) c.appendChild(el("p", "gnote", it.note));
+  const href = safeLink(it.link);
+  if (href){ const a = el("a", "glink", "🔗 " + linkLabel(href)); a.href = href; a.target = "_blank"; a.rel = "noopener"; c.appendChild(a); }
+  if (it.claimedBy){
+    const t = el("div", "gtaken");
+    t.append("🎁 ", el("b", "", it.claimedBy), " 님이 선점했어요");
+    const x = el("button", "btn sm", "선점 취소"); x.type = "button"; x.onclick = () => openClaim(it, "unclaim");
+    t.appendChild(x); c.appendChild(t);
+  } else {
+    const a = el("div", "gact");
+    const inp = el("input"); inp.type = "text"; inp.maxLength = 12; inp.placeholder = "내 닉네임"; inp.setAttribute("aria-label", it.name + " 선점할 닉네임");
+    const go = el("button", "btn primary", "선점하기"); go.type = "button";
+    go.onclick = () => openClaim(it, "claim", inp.value);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); go.click(); } });
+    a.append(inp, go); c.appendChild(a);
+  }
+  if (owner()){
+    const o = el("div", "gown");
+    const btn = (t, fn, cls) => { const b = el("button", "btn" + (cls ? " " + cls : ""), t); b.type = "button"; b.onclick = fn; o.appendChild(b); return b; };
+    btn("✎ 수정", () => openItem(it));
+    btn("↑", () => moveItem(it.id, -1)).disabled = i === 0;
+    btn("↓", () => moveItem(it.id, 1)).disabled = i === list.length - 1;
+    o.appendChild(el("span", "grow"));
+    if (it.claimedBy) btn("선점 해제", () => ownerRelease(it));
+    btn("삭제", () => deleteItem(it), "ghost danger");
+    c.appendChild(o);
+  }
+  return c;
+}
+
+/* ═══ 친구 — 선점 · 취소 ═══ */
+let clItem = null, clMode = "claim";
+function openClaim(it, mode, nick){
+  clItem = it; clMode = mode;
+  $("#clTitle").textContent = mode === "claim" ? "선점하기" : "선점 취소";
+  $("#clItem").textContent = it.name;
+  $("#clText").textContent = mode === "claim" ? "이 선물을 선점하면 다른 친구는 고를 수 없어요." : it.claimedBy + " 님이 선점한 선물이에요. 선점할 때 정한 개인 PIN 을 넣어주세요.";
+  $("#clNickFld").hidden = mode !== "claim";
+  $("#cl_nick").value = (nick || "").trim();
+  $("#cl_pin").value = "";
+  $("#clPinLbl").textContent = mode === "claim" ? "개인 PIN — 나중에 취소할 때만 써요 (4자 이상)" : "개인 PIN";
+  $("#clMsg").hidden = true;
+  $("#cl_go").textContent = mode === "claim" ? "선점하기" : "선점 취소하기";
+  $("#cl_go").className = "btn wide " + (mode === "claim" ? "primary" : "danger");
+  openModal("claimModal");
+  setTimeout(() => (mode === "claim" && !$("#cl_nick").value ? $("#cl_nick") : $("#cl_pin")).focus(), 80);
+}
+function clErr(m){ $("#clMsg").textContent = m; $("#clMsg").hidden = false; }
+$("#cl_go").onclick = async () => {
+  const it = clItem; if (!it) return;
+  const pin = $("#cl_pin").value.trim(), ref = C("wishView").doc(VID).collection("items").doc(it.id);
+  if (clMode === "claim"){
+    const nick = $("#cl_nick").value.trim();
+    if (!nick) return clErr("닉네임을 적어주세요");
+    if (pin.length < 4) return clErr("개인 PIN 은 4자 이상으로 정해주세요");
+    const u = await sha256(pin), chk = await sha256(u);
+    $("#cl_go").disabled = true;
+    try { await ref.update({ claimedBy: nick, claimedAt: Date.now(), claimCheck: chk, unclaim: "" }); closeModal("claimModal"); setStatus("선점 완료! " + nick + " 님 고마워요 🎁", "ok"); }
+    catch(e){ clErr(e && e.code === "permission-denied" ? "방금 다른 친구가 선점했어요. 다른 선물을 골라주세요" : "실패 — " + errText(e)); }
+    finally { $("#cl_go").disabled = false; }
+  } else {
+    if (!pin) return clErr("개인 PIN 을 넣어주세요");
+    const u = await sha256(pin);
+    $("#cl_go").disabled = true;
+    try { await ref.update({ claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: u }); closeModal("claimModal"); setStatus("선점을 취소했어요", "ok"); }
+    catch(e){ clErr(e && e.code === "permission-denied" ? "개인 PIN 이 맞지 않아요" : "실패 — " + errText(e)); }
+    finally { $("#cl_go").disabled = false; }
+  }
+};
+$("#cl_pin").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#cl_go").click(); } });
+
+/* ═══ 주인 — 선물 · 순서 · 설정 ═══ */
+let itEditing = null;
+function openItem(it){
+  itEditing = it || null;
+  $("#itemTitle").textContent = it ? "선물 수정" : "선물 추가";
+  $("#i_name").value = it ? it.name : ""; $("#i_note").value = it ? it.note || "" : ""; $("#i_link").value = it ? it.link || "" : "";
+  openModal("itemModal"); setTimeout(() => $("#i_name").focus(), 80);
+}
+$("#addBtn").onclick = () => openItem(null);
+$("#i_save").onclick = async () => {
+  const name = $("#i_name").value.trim(), note = $("#i_note").value.trim(), raw = $("#i_link").value.trim();
+  if (!name){ setStatus("선물 이름을 적어주세요", "err"); return; }
+  const link = raw ? safeLink(raw) : "";
+  if (raw && !link){ setStatus("링크 주소가 이상해요", "err"); return; }
+  const it = itEditing, col = C("wishView").doc(VID).collection("items");
+  closeModal("itemModal");
+  if (it) run(ownerBatch((b, op) => b.update(col.doc(it.id), { name, note, link, example: false, op })), "저장했어요");
+  else {
+    const id = "i" + rid(10);
+    run(ownerBatch((b, op) => {
+      b.set(col.doc(id), { name, note, link, claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: "", example: false, op, createdAt: TSV() });
+      b.update(C("wishView").doc(VID), { order: ordered().map(x => x.id).concat([id]), updatedAt: TSV(), op });
+    }), "선물을 추가했어요");
+  }
+};
+["#i_name", "#i_note", "#i_link"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#i_save").click(); } }));
+function moveItem(id, d){
+  const ids = ordered().map(x => x.id), i = ids.indexOf(id), j = i + d;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  if (VIEW) VIEW.order = ids; renderAll();                       // 바로 보이게
+  run(ownerBatch((b, op) => b.update(C("wishView").doc(VID), { order: ids, updatedAt: TSV(), op })));
+}
+function ownerRelease(it){
+  if (!confirm("‘" + it.name + "’ — " + it.claimedBy + " 님의 선점을 해제할까요?")) return;
+  run(ownerBatch((b, op) => b.update(C("wishView").doc(VID).collection("items").doc(it.id), { claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: "", op })), "선점을 해제했어요");
+}
+function deleteItem(it){
+  if (!confirm("‘" + it.name + "’ 을(를) 지울까요?" + (it.claimedBy ? "\n" + it.claimedBy + " 님이 선점한 선물이에요." : ""))) return;
+  run((async () => {
+    const b = db.batch(), id = "xi_" + VID + "_" + it.id;
+    delOp(b, id); b.delete(C("wishView").doc(VID).collection("items").doc(it.id));
+    await b.commit();
+    await ownerBatch((b2, op) => b2.update(C("wishView").doc(VID), { order: ordered().map(x => x.id).filter(x => x !== it.id), updatedAt: TSV(), op }));
+  })(), "지웠어요");
+}
+$("#exClear").onclick = () => {
+  const ex = ordered().filter(x => x.example);
+  if (!ex.length || !confirm("예시 선물 " + ex.length + "개를 지울까요?")) return;
+  run((async () => {
+    const b = db.batch();
+    ex.forEach(it => { delOp(b, "xi_" + VID + "_" + it.id); b.delete(C("wishView").doc(VID).collection("items").doc(it.id)); });
+    await b.commit();
+    await ownerBatch((b2, op) => b2.update(C("wishView").doc(VID), { order: ordered().map(x => x.id).filter(x => !ex.some(e => e.id === x)), updatedAt: TSV(), op }));
+  })(), "예시를 지웠어요");
+};
+$("#wlMore").onclick = () => { $("#wlSub").dataset.open = "1"; $("#wlSub").classList.remove("fold"); $("#wlMore").hidden = true; };
+
+/* 공유 — 친구용 링크 한 줄 (약속 잡자·밴드매니저와 같은 모양) */
+$("#shareBtn").onclick = () => {
+  const b = listOf(WID), u = location.origin + location.pathname + "?v=" + VID;
+  shareLine("위시태그 - " + ((VIEW && VIEW.heading) || (b && b.name) || "위시리스트") + " " + u, "링크 복사됨 — 친구들에게 보내세요");
+};
+$("#introBtn").onclick = () => shareLine("위시태그 - 선물이 겹치지 않는 위시리스트 " + location.origin + location.pathname, "소개 링크 복사됨 — 보내고 싶은 곳에 붙여넣으세요");
+
+/* 설정 */
+MODAL_OPEN.setModal = () => {
+  const b = listOf(WID);
+  $("#s_name").value = b ? b.name : ""; $("#s_heading").value = (VIEW && VIEW.heading) || ""; $("#s_sub").value = (VIEW && VIEW.subheading) || "";
+  $("#s_pin").value = ""; $("#s_pinLbl").textContent = b && b.locked ? "PIN — 지금 걸려 있어요 (바꾸거나, 비우고 눌러 해제)" : "PIN — 지금은 없어요 (숫자 4~8자리)";
+  $("#s_pinSave").textContent = b && b.locked ? "바꾸기" : "걸기";
+};
+$("#setBtn").onclick = () => openModal("setModal");
+$("#s_save").onclick = () => {
+  const name = $("#s_name").value.trim(), heading = $("#s_heading").value.trim(), sub = $("#s_sub").value.replace(/\s+$/, "");
+  if (!name){ setStatus("리스트 이름을 적어주세요", "err"); return; }
+  const b = listOf(WID);
+  closeModal("setModal");
+  run(ownerBatch((bt, op) => {
+    bt.update(C("wishView").doc(VID), { heading: heading || name, subheading: sub, updatedAt: TSV(), op });
+    if (!b || b.name !== name) bt.update(C("wishes").doc(WID), { name, updatedAt: TSV(), op });
+  }), "저장했어요");
+};
+/* PIN 바꾸기 = 새 열쇠를 만들고 옛 열쇠를 지운다 (친구 링크는 그대로) */
+$("#s_pinSave").onclick = async () => {
+  const pin = $("#s_pin").value.trim();
+  if (pin && !pinOk(pin)){ setStatus("PIN 은 숫자 4~8자리예요", "err"); return; }
+  if (!confirm(pin ? "PIN 을 바꿀까요? 다른 기기에서는 새 PIN 으로 다시 들어와야 해요." : "PIN 을 해제할까요? 그러면 누구나 목록에서 들어와 고칠 수 있어요.")) return;
+  const oldK = KEY, k2 = await sha256(WID + ":" + pin);
+  if (k2 === oldK){ setStatus("지금 PIN 과 같아요", "err"); return; }
+  const o = await C("wishOwner").doc(oldK).get();
+  const n = (o.exists && o.data().n) || "";
+  const ok = await run(ownerBatch((b, op) => {
+    b.set(C("wishOwner").doc(k2), { wid: WID, v: VID, n: rid(10), op });
+    delOp(b, "xo_" + oldK + "_" + n); b.delete(C("wishOwner").doc(oldK));
+    b.update(C("wishes").doc(WID), { locked: !!pin, updatedAt: TSV(), op });
+  }), pin ? "PIN 을 바꿨어요" : "PIN 을 해제했어요");
+  if (ok){ KEY = k2; ls("wt_key:" + WID, k2); closeModal("setModal"); }
+};
+/* 리스트 지우기 — 이름을 한 번 더 적어야 */
+$("#s_delete").onclick = async () => {
+  const b = listOf(WID); if (!b) return;
+  const typed = prompt("정말 지우려면 리스트 이름을 그대로 적어주세요:\n" + b.name);
+  if (typed === null || typed.trim() !== b.name){ setStatus("이름이 달라서 지우지 않았어요", "err"); return; }
+  closeModal("setModal");
+  const wid = WID, v = VID, k = KEY, items = ITEMS.slice();
+  const o = await C("wishOwner").doc(k).get(); const n = (o.exists && o.data().n) || "";
+  const ok = await run((async () => {
+    for (let i = 0; i < items.length; i += 8){              // 확인표 + 지우기를 8개씩
+      const bt = db.batch();
+      items.slice(i, i + 8).forEach(it => { delOp(bt, "xi_" + v + "_" + it.id); bt.delete(C("wishView").doc(v).collection("items").doc(it.id)); });
+      await bt.commit();
+    }
+    const bt = db.batch();
+    delOp(bt, "xv_" + v); bt.delete(C("wishView").doc(v));
+    delOp(bt, "xw_" + wid); bt.delete(C("wishes").doc(wid));
+    delOp(bt, "xo_" + k + "_" + n); bt.delete(C("wishOwner").doc(k));
+    await bt.commit();
+  })(), "리스트를 지웠어요");
+  if (ok){ ls("wt_mine", JSON.stringify(mineIds().filter(x => x !== wid))); ls("wt_key:" + wid, ""); ls("wt_v:" + wid, ""); goHome(); }
+};
+
+/* ═══ 새 리스트 ═══ */
+const EXAMPLES = [
+  { name: "예시) 따뜻한 목도리", note: "회색이나 베이지면 좋아요", link: "" },
+  { name: "예시) 요즘 읽고 싶은 책", note: "아무 소설이나 추천해 주세요", link: "" }
+];
+$("#n_make").onclick = async () => {
+  const name = $("#n_name").value.trim(), pin = $("#n_pin").value.trim();
+  if (!name){ setStatus("리스트 이름을 적어주세요", "err"); return; }
+  if (pin && !pinOk(pin)){ setStatus("PIN 은 숫자 4~8자리예요", "err"); return; }
+  $("#n_make").disabled = true;
+  try {
+    const wid = rid(12), v = rid(24), k = await sha256(wid + ":" + pin);
+    const b = db.batch();
+    b.set(C("wishes").doc(wid), { name, locked: !!pin, createdAt: TSV(), updatedAt: TSV() });
+    b.set(C("wishOwner").doc(k), { wid, v, n: rid(10) });
+    b.set(C("wishView").doc(v), { wid, heading: name, subheading: "", order: [], updatedAt: TSV() });
+    await b.commit();
+    ls("wt_key:" + wid, k); ls("wt_v:" + wid, v); mineAdd(wid);
+    WID = wid; KEY = k; VID = v;
+    const ids = EXAMPLES.map(() => "i" + rid(10));
+    await ownerBatch((bt, op) => {
+      EXAMPLES.forEach((x, i) => bt.set(C("wishView").doc(v).collection("items").doc(ids[i]),
+        { name: x.name, note: x.note, link: x.link, claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: "", example: true, op, createdAt: TSV() }));
+      bt.update(C("wishView").doc(v), { order: ids, updatedAt: TSV(), op });
+    });
+    closeModal("newModal");
+    afterNav(() => { watchView(v, wid, k); setStatus("만들었어요! 🔗 친구에게 공유로 링크를 보내세요", "ok"); });
+  } catch(e){ setStatus("실패 — " + errText(e), "err"); }
+  finally { $("#n_make").disabled = false; }
+};
+MODAL_OPEN.newModal = () => { $("#n_name").value = ""; $("#n_pin").value = ""; setTimeout(() => $("#n_name").focus(), 80); };
+
+/* ═══ 이벤트 ═══ */
+MODAL_OPEN.pickModal = () => { $("#homeBtn").hidden = !WID; renderPick(); };
+MODAL_OPEN.allModal = () => renderPick();
+$("#pickBtn").onclick = () => openModal("pickModal");
+$("#newBtn").onclick = () => { closeModal("pickModal"); afterNav(() => openModal("newModal")); };
+$("#homeNew").onclick = () => openModal("newModal");
+$("#allBtn").onclick = () => openModal("allModal");
+$("#homeBtn").onclick = () => { closeModal("pickModal"); afterNav(goHome); };
+$("#lockGo").onclick = () => { const p = $("#lockPin").value.trim(); if (!p || !WID) return; openOwner(WID, p); };
+$("#lockPin").addEventListener("keydown", e => { if (e.key === "Enter") $("#lockGo").click(); });
+/* 제목 = 지금 화면 그대로 새로고침 */
+$("#titleBtn").onclick = () => location.reload();
+function onNavPop(){}
+
+/* ═══ 시작 ═══ */
+if (!FB_OK) setStatus("저장소를 불러오지 못했어요 — 네트워크를 확인하고 새로고침해 주세요", "err");
+else {
+  watchLists();
+  const q = new URLSearchParams(location.search);
+  if (q.get("v")) openView(q.get("v"));
+  else if (q.get("w")) openOwner(q.get("w"));
+  renderAll();
+}
+</script>
 </body>
 </html>
