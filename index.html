@@ -19,7 +19,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://benny3s.github.io/wishtag/">
 <!-- 디자인은 약속 잡자와 **같은 파일** (2026-10-07 Benny: "약속잡자랑 비슷한 디자인으로") -->
-<link rel="stylesheet" href="../when/ui.css?v=2026-10-10a">
+<link rel="stylesheet" href="../when/ui.css?v=2026-10-10b">
 <style>
 /* ═══ 위시태그에만 있는 것 — 선물 카드 · 목록 · 잠금 ═══ */
 .lockcard{text-align:center;padding:30px 18px}
@@ -253,7 +253,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="../when/core.js?v=2026-10-10a"></script>
+<script src="../when/core.js?v=2026-10-10b"></script>
 <script>/* 위시태그 — benny3s.github.io/wishtag/  (2026-10-07, Apps Script 판을 Firebase 로 새로 만듦)
    원본: 지민 생일 위시태그(minim0.github.io/wishtag — 그대로 둠). 이건 누구나 자기 리스트를 만드는 판.
    저장 (규칙: secretary/benny-apps/firestore.rules 의 '위시태그')
@@ -263,7 +263,7 @@
      wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
        /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
    개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
-const BUILD = "2026-10-10a";
+const BUILD = "2026-10-10b";
 
 /* ── 작은 도구 ── */
 function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
