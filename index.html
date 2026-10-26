@@ -149,7 +149,8 @@
       </span>
     </div>
     <button class="btn primary" id="newBtn" type="button" style="width:100%;margin-top:12px">＋ 새 위시리스트 만들기</button>
-    <button class="btn" id="allBtn" type="button" style="width:100%;margin-top:8px">🔎 등록된 리스트 찾기</button>
+    <!-- 전체 리스트 찾기는 없앰 — 링크로만 들어온다 (2026-10-26 보안) -->
+    <p class="hint" style="margin:8px 0 0">다른 리스트는 받은 링크로 들어와요.</p>
     <button class="btn soft" id="introBtn" type="button" style="width:100%;margin-top:8px">📣 위시태그 소개하기</button>
     <div id="mineWrap" hidden>
       <div class="mine-h"><span>내 리스트</span><span>✕ = 이 기기에서만 지우기</span></div>
@@ -263,7 +264,7 @@
      wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
        /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
    개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
-const BUILD = "2026-10-10b";
+const BUILD = "2026-10-26a";
 
 /* ── 작은 도구 ── */
 function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
@@ -330,13 +331,25 @@ async function keyLost(){
 }
 
 /* ═══ 목록 ═══ */
+/* 2026-10-26 링크 전용 (Benny: "링크 있어야만 들어올 수 있게") — 전체 리스트 목록은 서버 규칙에서 막힘.
+   이 기기에서 연 리스트(wt_mine)와 주소(?w=)로 연 리스트만 하나씩 지켜본다 */
+const listWatch = {};
+function watchList(id){
+  if (!id || listWatch[id]) return;
+  listWatch[id] = C("wishes").doc(id).onSnapshot(s => {
+    LISTS = LISTS.filter(x => x.id !== id);
+    if (s.exists) LISTS.push(Object.assign({ id: s.id }, s.data()));
+    LISTS.sort((a, b) => ((b.createdAt && b.createdAt.toMillis()) || 0) - ((a.createdAt && a.createdAt.toMillis()) || 0));
+    renderAll();
+    if (!$("#pickModal").hidden) renderPick();
+  }, () => {});
+}
 function watchLists(){
-  C("wishes").onSnapshot(s => {
-    LISTS = s.docs.map(d => Object.assign({ id: d.id }, d.data()))
-      .sort((a, b) => ((b.createdAt && b.createdAt.toMillis()) || 0) - ((a.createdAt && a.createdAt.toMillis()) || 0));
-    listsReady = true; renderAll();
-    if (!$("#pickModal").hidden || !$("#allModal").hidden) renderPick();
-  }, e => setStatus("목록을 못 불러왔어요 — " + errText(e), "err"));
+  const ids = mineIds().slice();
+  const w = new URLSearchParams(location.search).get("w");
+  if (w && !ids.includes(w)) ids.unshift(w);
+  ids.forEach(watchList);
+  listsReady = true; renderAll();
 }
 function listRow(b, onDel){
   const row = el("div", "pkrow");
@@ -355,9 +368,6 @@ function renderPick(){
   $("#mineWrap").hidden = !mine.length;
   const mb = $("#mineList"); mb.innerHTML = "";
   mine.forEach(b => mb.appendChild(listRow(b, mineForget)));
-  const box = $("#allList"); box.innerHTML = "";
-  if (!LISTS.length){ box.innerHTML = '<p class="hint">아직 리스트가 없어요.</p>'; return; }
-  LISTS.forEach(b => box.appendChild(listRow(b, null)));
 }
 
 /* ═══ 열기 ═══ */
@@ -373,6 +383,7 @@ async function openOwner(wid, pin){
 async function openOwner_(wid, pin){
   const b = listOf(wid) || await C("wishes").doc(wid).get().then(s => s.exists ? Object.assign({ id: s.id }, s.data()) : null).catch(() => null);
   if (!b){ setStatus("없는 리스트예요", "err"); return; }
+  watchList(wid);
   let k = pin !== undefined ? await sha256(wid + ":" + pin) : ls("wt_key:" + wid);
   if (!k && !b.locked) k = await sha256(wid + ":");
   if (!k){ closeList(); WID = wid; renderAll(); showLock(b); return; }
@@ -727,7 +738,6 @@ MODAL_OPEN.allModal = () => renderPick();
 $("#pickBtn").onclick = () => openModal("pickModal");
 $("#newBtn").onclick = () => { closeModal("pickModal"); afterNav(() => openModal("newModal")); };
 $("#homeNew").onclick = () => openModal("newModal");
-$("#allBtn").onclick = () => openModal("allModal");
 $("#homeBtn").onclick = () => { closeModal("pickModal"); afterNav(goHome); };
 $("#lockGo").onclick = () => { const p = $("#lockPin").value.trim(); if (!p || !WID) return; openOwner(WID, p); };
 $("#lockPin").addEventListener("keydown", e => { if (e.key === "Enter") $("#lockGo").click(); });
