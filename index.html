@@ -87,6 +87,10 @@
 
 <!-- 처음 화면 — 리스트를 아직 안 골랐을 때 -->
 <section id="view-home" hidden>
+  <div class="card" id="homeMine" hidden>
+    <h2 style="margin:0 0 4px">내 위시리스트</h2>
+    <div class="list" id="homeMineList"></div>
+  </div>
   <div class="card">
     <h2 style="margin:0 0 4px">내 위시리스트 만들기</h2>
     <p class="hint">갖고 싶은 선물을 적어 두고 <b>링크만 보내면</b>, 친구들이 골라서 선점해요. 같은 선물이 겹치지 않아요.</p>
@@ -256,7 +260,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="../when/core.js?v=2026-10-10b"></script>
+<script src="../when/core.js?v=2026-10-30a"></script>
 <script>/* 위시태그 — benny3s.github.io/wishtag/  (2026-10-07, Apps Script 판을 Firebase 로 새로 만듦)
    원본: 지민 생일 위시태그(minim0.github.io/wishtag — 그대로 둠). 이건 누구나 자기 리스트를 만드는 판.
    저장 (규칙: secretary/benny-apps/firestore.rules 의 '위시태그')
@@ -266,7 +270,7 @@
      wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
        /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
    개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
-const BUILD = "2026-10-27a";
+const BUILD = "2026-10-30a";
 
 /* ── 작은 도구 ── */
 function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
@@ -352,6 +356,21 @@ function watchLists(){
   if (w && !ids.includes(w)) ids.unshift(w);
   ids.forEach(watchList);
   listsReady = true; renderAll();
+  if (typeof adminList === "function"){
+    adminList("wishes").then(adm => {
+      if (!adm || !adm.length) return;
+      const cur = mineIds();
+      let chg = false;
+      adm.forEach(id => {
+        if (id && !cur.includes(id)){ cur.push(id); chg = true; }
+        watchList(id);
+      });
+      if (chg) ls("wt_mine", JSON.stringify(cur.slice(0, 50)));
+      if (typeof applyAdminUi === "function") applyAdminUi();
+      renderPick();
+      renderAll();
+    });
+  }
 }
 function listRow(b, onDel){
   const row = el("div", "pkrow");
@@ -370,6 +389,12 @@ function renderPick(){
   $("#mineWrap").hidden = !mine.length;
   const mb = $("#mineList"); mb.innerHTML = "";
   mine.forEach(b => mb.appendChild(listRow(b, mineForget)));
+  const hm = $("#homeMine"), hml = $("#homeMineList");
+  if (hm && hml){
+    hm.hidden = !mine.length;
+    hml.innerHTML = "";
+    mine.forEach(b => hml.appendChild(listRow(b, null)));
+  }
 }
 
 /* ═══ 열기 ═══ */
@@ -453,12 +478,12 @@ function renderAll(){
   const b = listOf(WID);
   $("#pickName").textContent = b ? (b.locked ? "🔒 " : "") + b.name : "🎁 리스트 고르기";
   document.title = VIEW ? (VIEW.heading || (b && b.name) || "위시리스트") + " — 위시태그" : "위시태그";
-  $("#foot").textContent = "위시태그 " + BUILD;
+  $("#foot").textContent = "위시태그 " + BUILD + (typeof isAdminMode === "function" && isAdminMode() ? " · 관리자" : "");
   const showList = !!(VID && VIEW);
   $("#view-list").hidden = !showList;
   $("#view-lock").hidden = showList || !WID || !!VID || $("#view-lock").hidden;   // 잠금 화면은 showLock 이 연다
   $("#view-home").hidden = showList || !!WID || !!VID || opening;
-  if (!showList) return;
+  if (!showList){ renderPick(); return; }
   $("#wlHeading").textContent = VIEW.heading || (b && b.name) || "위시리스트";
   const sub = VIEW.subheading || "";
   $("#wlSub").textContent = sub; $("#wlSub").hidden = !sub;
@@ -699,7 +724,11 @@ $("#s_delete").onclick = async () => {
     await bt.commit();
   })(), "리스트를 지웠어요");
   deleting = false;
-  if (ok){ ls("wt_mine", JSON.stringify(mineIds().filter(x => x !== wid))); ls("wt_key:" + wid, ""); ls("wt_v:" + wid, ""); goHome(); }
+  if (ok){
+    ls("wt_mine", JSON.stringify(mineIds().filter(x => x !== wid))); ls("wt_key:" + wid, ""); ls("wt_v:" + wid, "");
+    if (typeof adminUntrack === "function") adminUntrack("wishes", wid);
+    goHome();
+  }
 };
 
 /* ═══ 새 리스트 ═══ */
@@ -720,6 +749,7 @@ $("#n_make").onclick = async () => {
     b.set(C("wishView").doc(v), { wid, heading: name, subheading: "", order: [], updatedAt: TSV() });
     await b.commit();
     ls("wt_key:" + wid, k); ls("wt_v:" + wid, v); mineAdd(wid);
+    if (typeof adminTrack === "function") adminTrack("wishes", wid);
     WID = wid; KEY = k; VID = v;
     const ids = EXAMPLES.map(() => "i" + rid(10));
     await ownerBatch((bt, op) => {
