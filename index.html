@@ -198,7 +198,7 @@
     </div>
     <label class="fld"><span>선물 이름</span><input type="text" id="i_name" maxlength="60" placeholder="예: 테클라 주방 손수건"></label>
     <label class="fld"><span>설명 (선택) — 색·사이즈 등</span><input type="text" id="i_note" maxlength="200" placeholder="예: 하바나브라운"></label>
-    <label class="fld"><span>링크 (선택)</span><input type="text" id="i_link" maxlength="600" inputmode="url" placeholder="https://"></label>
+    <label class="fld"><span>링크 (선택)</span><input type="text" id="i_link" maxlength="2000" inputmode="url" placeholder="https://"></label>
     <button class="btn primary wide" id="i_save" type="button">저장</button>
   </div>
 </div>
@@ -625,16 +625,17 @@ $("#i_save").onclick = async () => {
   if (!name){ setStatus("선물 이름을 적어주세요", "err"); return; }
   const link = raw ? safeLink(raw) : "";
   if (raw && !link){ setStatus("링크 주소가 이상해요", "err"); return; }
-  const it = itEditing, col = C("wishView").doc(VID).collection("items");
-  closeModal("itemModal");
-  if (it) run(ownerBatch((b, op) => b.update(col.doc(it.id), { name, note, link, example: false, op })), "저장했어요");
-  else {
-    const id = "i" + rid(10);
-    run(ownerBatch((b, op) => {
-      b.set(col.doc(id), { name, note, link, claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: "", example: false, op, createdAt: TSV() });
-      b.update(C("wishView").doc(VID), { order: ordered().map(x => x.id).concat([id]), updatedAt: TSV(), op });
-    }), "선물을 추가했어요");
-  }
+  if (link.length > 600){ setStatus("링크가 너무 길어요 — 주소로 바뀐 뒤 600자까지예요 (" + link.length + "자)", "err"); return; }   // 글자 입력칸은 2000자까지 받고, 저장되는 주소 길이로 본다
+  const it = itEditing, col = C("wishView").doc(VID).collection("items"), id = "i" + rid(10);
+  $("#i_save").disabled = true;                                  // 저장이 끝난 뒤에 창을 닫는다 — 실패하면 입력이 그대로 남게 (2026-11-05)
+  const ok = await run(it
+    ? ownerBatch((b, op) => b.update(col.doc(it.id), { name, note, link, example: false, op }))
+    : ownerBatch((b, op) => {
+        b.set(col.doc(id), { name, note, link, claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: "", example: false, op, createdAt: TSV() });
+        b.update(C("wishView").doc(VID), { order: ordered().map(x => x.id).concat([id]), updatedAt: TSV(), op });
+      }), it ? "저장했어요" : "선물을 추가했어요");
+  $("#i_save").disabled = false;
+  if (ok) closeModal("itemModal");
 };
 ["#i_name", "#i_note", "#i_link"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#i_save").click(); } }));
 function moveItem(id, d){
@@ -683,15 +684,17 @@ MODAL_OPEN.setModal = () => {
   $("#s_pinSave").textContent = b && b.locked ? "바꾸기" : "걸기";
 };
 $("#setBtn").onclick = () => openModal("setModal");
-$("#s_save").onclick = () => {
+$("#s_save").onclick = async () => {
   const name = $("#s_name").value.trim(), heading = $("#s_heading").value.trim(), sub = $("#s_sub").value.replace(/\s+$/, "");
   if (!name){ setStatus("리스트 이름을 적어주세요", "err"); return; }
   const b = listOf(WID);
-  closeModal("setModal");
-  run(ownerBatch((bt, op) => {
+  $("#s_save").disabled = true;                                  // 저장이 끝난 뒤에 창을 닫는다 (2026-11-05)
+  const ok = await run(ownerBatch((bt, op) => {
     bt.update(C("wishView").doc(VID), { heading: heading || name, subheading: sub, updatedAt: TSV(), op });
     if (!b || b.name !== name) bt.update(C("wishes").doc(WID), { name, updatedAt: TSV(), op });
   }), "저장했어요");
+  $("#s_save").disabled = false;
+  if (ok) closeModal("setModal");
 };
 /* PIN 바꾸기 = 새 열쇠를 만들고 옛 열쇠를 지운다 (친구 링크는 그대로) */
 $("#s_pinSave").onclick = async () => {
