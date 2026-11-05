@@ -260,7 +260,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="../when/core.js?v=2026-10-30a"></script>
+<script src="../when/core.js?v=2026-11-05a"></script>
 <script>/* 위시태그 — benny3s.github.io/wishtag/  (2026-10-07, Apps Script 판을 Firebase 로 새로 만듦)
    원본: 지민 생일 위시태그(minim0.github.io/wishtag — 그대로 둠). 이건 누구나 자기 리스트를 만드는 판.
    저장 (규칙: secretary/benny-apps/firestore.rules 의 '위시태그')
@@ -269,8 +269,9 @@
      wishOps/{op}            주인 확인표 — 고칠 때마다 같은 batch 로 만든다 (아무도 못 읽음)
      wishView/{v}            친구 화면(제목·소개·순서). v = 무작위 — 링크로만
        /items/{iid}          선물. 친구는 선점(닉네임+개인 PIN)·취소(개인 PIN)만
-   개인 PIN: u = sha256(PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조 */
-const BUILD = "2026-10-30a";
+   개인 PIN: u = sha256(선물id:선점시각:PIN) 을 취소할 때 보내고, 선점 때는 sha256(u) 만 남긴다 → 규칙이 sha256(u) 를 대조.
+   (2026-11-05 선물·선점마다 u 가 달라, 취소 뒤 문서에 남은 u 로 같은 PIN 의 다른 선점을 못 푼다. 옛 선점은 u = sha256(PIN) 이었고 그대로 취소된다) */
+const BUILD = "2026-11-05a";
 
 /* ── 작은 도구 ── */
 function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k) || ""; v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){ return ""; } }
@@ -280,6 +281,12 @@ function pinOk(p){ return /^\d{4,8}$/.test(p); }
 function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function safeLink(u){ u = String(u || "").trim(); if (!u) return ""; if (!/^https?:\/\//i.test(u)) u = "https://" + u; try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch(e){ return ""; } }
 function linkLabel(u){ try { return new URL(u).hostname.replace(/^www\./, ""); } catch(e){ return "링크"; } }
+/** 취소용 u — 이 선점 문서에 맞는 것 (새 방식 → 옛 방식 순으로 claimCheck 와 맞춰 본다. 둘 다 아니면 새 방식으로 보내 규칙이 거절하게) */
+async function unclaimOf(it, pin){
+  const cand = [await sha256(it.id + ":" + (it.claimedAt || 0) + ":" + pin), await sha256(pin)];
+  for (const u of cand) if (await sha256(u) === it.claimCheck) return u;
+  return cand[0];
+}
 const C = n => db.collection(n);
 const TSV = () => firebase.firestore.FieldValue.serverTimestamp();
 
@@ -588,14 +595,14 @@ $("#cl_go").onclick = async () => {
     const nick = $("#cl_nick").value.trim();
     if (!nick) return clErr("닉네임을 적어주세요");
     if (pin.length < 4) return clErr("개인 PIN 은 4자 이상으로 정해주세요");
-    const u = await sha256(pin), chk = await sha256(u);
+    const at = Date.now(), u = await sha256(it.id + ":" + at + ":" + pin), chk = await sha256(u);
     $("#cl_go").disabled = true;
-    try { await ref.update({ claimedBy: nick, claimedAt: Date.now(), claimCheck: chk, unclaim: "" }); closeModal("claimModal"); setStatus("선점 완료! " + nick + " 님 고마워요 🎁", "ok"); }
+    try { await ref.update({ claimedBy: nick, claimedAt: at, claimCheck: chk, unclaim: "" }); closeModal("claimModal"); setStatus("선점 완료! " + nick + " 님 고마워요 🎁", "ok"); }
     catch(e){ clErr(e && e.code === "permission-denied" ? "방금 다른 친구가 선점했어요. 다른 선물을 골라주세요" : "실패 — " + errText(e)); }
     finally { $("#cl_go").disabled = false; }
   } else {
     if (!pin) return clErr("개인 PIN 을 넣어주세요");
-    const u = await sha256(pin);
+    const u = await unclaimOf(it, pin);
     $("#cl_go").disabled = true;
     try { await ref.update({ claimedBy: "", claimedAt: 0, claimCheck: "", unclaim: u }); closeModal("claimModal"); setStatus("선점을 취소했어요", "ok"); }
     catch(e){ clErr(e && e.code === "permission-denied" ? "개인 PIN 이 맞지 않아요" : "실패 — " + errText(e)); }
