@@ -250,6 +250,10 @@
       <div class="row nowrap"><input type="text" id="s_pin" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="새 PIN (비우면 해제)" style="flex:1 1 auto">
         <button class="btn" id="s_pinSave" type="button">바꾸기</button></div>
     </div>
+    <div class="fld" style="margin-top:18px"><span>주인 링크</span>
+      <button class="btn" id="s_ownerLink" type="button" style="width:100%">🔑 주인 링크 복사</button>
+      <p class="hint" style="margin:6px 0 0">나만 보관하세요. 이 링크와 PIN 이 있어야 다른 기기에서 고칠 수 있어요. 친구에게는 공유 버튼의 링크를 보내세요.</p>
+    </div>
     <details class="nmore" style="margin-top:14px">
       <summary>리스트 지우기</summary>
       <p class="hint">선물·선점 기록까지 전부 지워지고 되돌릴 수 없어요.</p>
@@ -308,7 +312,7 @@ function mineIds(){ try { const a = JSON.parse(ls("wt_mine") || "[]"); return Ar
 function mineAdd(wid){ const a = mineIds().filter(x => x !== wid); a.unshift(wid); ls("wt_mine", JSON.stringify(a.slice(0, 20))); }
 async function mineForget(wid){
   const b = listOf(wid);
-  if (!await ask({ title: "이 기기 목록에서 지울까요?", text: "‘" + (b ? b.name : "이 리스트") + "’ — 리스트는 그대로 있고, 다시 들어가려면 PIN 이 필요해요.", ok: "지우기" })) return;
+  if (!await ask({ title: "이 기기 목록에서 지울까요?", text: "‘" + (b ? b.name : "이 리스트") + "’ — 리스트는 그대로 있고, 다시 들어가려면 주인 링크와 PIN 이 필요해요.", ok: "지우기" })) return;
   ls("wt_mine", JSON.stringify(mineIds().filter(x => x !== wid)));
   ls("wt_key:" + wid, ""); ls("wt_v:" + wid, "");
   if (wid === WID){ closeModal("pickModal"); afterNav(goHome); } else renderPick();
@@ -331,10 +335,12 @@ async function widOfView(d){
   if (d.wh) for (const id of knownWids()) if (await sha256(id) === d.wh) return id;
   return "";
 }
-/** 이 열쇠가 지금 유효한가 → wishOwner 문서 (아니면 null). kh 가 있는 리스트는 그것과도 맞아야 한다 — 문서만 남은 숨은 열쇠는 규칙이 막는다 */
+/** 이 열쇠가 지금 유효한가 → wishOwner 문서 / 죽은 열쇠면 null / 못 읽었으면 undefined.
+    kh 가 있는 리스트는 그것과도 맞아야 한다 — 문서만 남은 숨은 열쇠는 규칙이 막는다 */
 async function ownerDoc(wid, k){
-  const o = await C("wishOwner").doc(k).get().catch(() => null);
-  if (!o || !o.exists || o.data().wid !== wid) return null;
+  const o = await C("wishOwner").doc(k).get().catch(() => undefined);
+  if (o === undefined) return undefined;
+  if (!o.exists || o.data().wid !== wid) return null;
   const w = await C("wishes").doc(wid).get().catch(() => null);
   const kh = w && w.exists ? w.data().kh : "";
   return kh && kh !== await sha256(k) ? null : o;
@@ -470,7 +476,14 @@ async function openView_(v){
   if (!s || !s.exists){ closeList(); renderAll(); setStatus("없는 리스트예요 — 링크를 확인해 주세요", "err"); return; }
   const wid = await widOfView(s.data()), k = wid ? ls("wt_key:" + wid) : "";
   let mine = "";
-  if (k){ const o = await ownerDoc(wid, k); if (o && o.data().v === v) mine = k; }   // v 까지 — wh 만 베껴 만든 가짜 화면을 주인 권한으로 열지 않게
+  if (k){
+    const o = await ownerDoc(wid, k);
+    if (o && o.data().v === v) mine = k;                         // v 까지 — wh 만 베껴 만든 가짜 화면을 주인 권한으로 열지 않게
+    else if (o === null){                                        // 다른 기기에서 PIN 이 바뀜 — 조용히 친구 화면이 되지 않게 한 번 알린다 (열쇠를 지우니 다음엔 안 뜬다)
+      ls("wt_key:" + wid, "");
+      setStatus("주인 열쇠가 바뀌었어요. 주인 링크로 다시 들어오세요", "err");
+    }
+  }
   if (mine) watchList(wid);
   watchView(v, wid, mine);
 }
@@ -713,6 +726,13 @@ $("#shareBtn").onclick = () => {
   const b = listOf(WID), u = location.origin + location.pathname + "?v=" + VID;
   shareLine("위시태그 - " + ((VIEW && VIEW.heading) || (b && b.name) || "위시리스트") + " " + u, "링크 복사됨 — 친구들에게 보내세요");
 };
+/* 주인 링크 — 주소가 ?v= 뿐이라 새 기기 · 다른 브라우저에선 이 링크(?w=) + PIN 으로만 주인이 된다. 공유창에 잘못 보내지 않게 복사만 */
+$("#s_ownerLink").onclick = async () => {
+  if (!WID || !KEY) return;
+  const u = location.origin + location.pathname + "?w=" + WID;
+  try { await navigator.clipboard.writeText(u); setStatus("주인 링크를 복사했어요 — 나만 보관하세요", "ok"); }
+  catch(e){ askText({ title: "주인 링크 — 나만 보관하세요", text: "글을 길게 눌러 복사하세요", value: u, readonly: true, ok: "닫기", noCancel: true }); }
+};
 $("#introBtn").onclick = () => shareLine("위시태그 - 선물이 겹치지 않는 위시리스트 " + location.origin + location.pathname, "소개 링크 복사됨 — 보내고 싶은 곳에 붙여넣으세요");
 
 /* 설정 */
@@ -813,7 +833,8 @@ $("#n_make").onclick = async () => {
       await bt.commit();
     } catch(e){ exOk = false; }
     closeModal("newModal");
-    afterNav(() => { watchView(v, wid, k); exOk ? setStatus("만들었어요! 🔗 친구에게 공유로 링크를 보내세요", "ok") : setStatus("만들었어요 — 예시 선물은 못 넣었어요. ＋ 선물 추가로 넣어 주세요", "err"); });
+    /* watchList — 이게 없으면 새로고침 전까지 리스트 정보가 없어 지우기가 반응 없이 끝나고 설정이 PIN 을 '없음' 으로 보였다 */
+    afterNav(() => { watchList(wid); watchView(v, wid, k); exOk ? setStatus("만들었어요! 🔗 공유 링크는 친구에게, ⚙ 설정의 주인 링크는 나만 보관하세요", "ok") : setStatus("만들었어요 — 예시 선물은 못 넣었어요. ⚙ 설정의 주인 링크는 나만 보관하세요", "err"); });
   } catch(e){ setStatus("실패 — " + errText(e), "err"); }
   finally { $("#n_make").disabled = false; }
 };

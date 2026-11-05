@@ -71,7 +71,7 @@ function makeDb(){
       path: p, id: p.split("/").pop(),
       collection: n => col(p + "/" + n),
       onSnapshot: cb => { if (hooks.live) Promise.resolve().then(() => cb(snap(p))); return () => {}; },
-      get: async () => { await null; if (hooks.failGet) throw hooks.failGet; return snap(p); },
+      get: async () => { await null; if (hooks.failGet) throw hooks.failGet; if (hooks.failGetPath && hooks.failGetPath(p)) throw Object.assign(new Error("net"), { code: "unavailable" }); return snap(p); },
       set: async d => { await null; ruleGate([["set", p, d]]); write("set", p, d); },
       update: async d => { await null; ruleGate([["update", p, d]]); write("update", p, d); },
       delete: async () => { await null; ruleGate([["delete", p]]); write("delete", p); }

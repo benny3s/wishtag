@@ -55,7 +55,18 @@ def viewWid_와_data_wid_로_옛_판별을_쓰는_곳이_없다():
 @test
 def wishOps_는_kh_를_요청_전_값으로_본다():
     assert "get(/databases/$(db)/documents/wishes/$(request.resource.data.wid)).data.get(''," in NOSPACE, "get(wishes).data.get('kh')"
-    assert "getAfter(/databases/$(db)/documents/wishes/$(request.resource.data.wid)).data.get(''" in NOSPACE, "열쇠 만들기는 뒤 값과 대조"
+    assert "getAfter(/databases/$(db)/documents/wishes/$(d.wid)).data.get(''" in NOSPACE, "열쇠 만들기는 뒤 값과 대조"
+
+
+@test
+def 열쇠_문서_update_는_wid_를_못_바꾸고_create_와_같은_조건():
+    assert "allowupdate:ifrequest.resource.data.wid==resource.data.wid&&wishOwnerOk(k,request.resource.data);" in NOSPACE
+    assert "allowcreate:ifwishOwnerOk(k,request.resource.data);" in NOSPACE
+
+
+@test
+def wishOps_는_wishes_가_있는지_먼저_본다():
+    assert "exists(/databases/$(db)/documents/wishes/$(request.resource.data.wid))?get(" in NOSPACE
 
 
 @test

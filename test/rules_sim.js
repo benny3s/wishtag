@@ -64,7 +64,7 @@ function evalRule(C, method, p, d, res){
   const viewData = v => C.get("wishView/" + v);
   const wishKeyOk = (wid, k, kh) =>
     (kh !== "" && hex(k) === kh) ||
-    (kh === "" && C.exists("wishOwner/" + k) && C.get("wishOwner/" + k).wid === wid);
+    (kh === "" && C.get("wishOwner/" + k).wid === wid);
 
   /* wishes/{wid} */
   if (seg[0] === "wishes" && seg.length === 2){
@@ -86,13 +86,13 @@ function evalRule(C, method, p, d, res){
   /* wishOwner/{k} */
   if (seg[0] === "wishOwner" && seg.length === 2){
     const k = seg[1];
-    if (method === "update") return false;
-    if (method === "create")
-      return hasOnly(d, ["wid", "v", "n", "op"])
-        && typeof d.wid === "string" && typeof d.v === "string" && d.v.length >= 16
-        && typeof d.n === "string" && d.n.length >= 6 && d.n.length <= 20
-        && ( (!C.exists("wishes/" + d.wid) && C.existsAfter("wishes/" + d.wid)) || opOk(d.wid, OR(d, "op", "")) )
-        && OR(C.getAfter("wishes/" + d.wid), "kh", "") === hex(k);
+    const wishOwnerOk = () => hasOnly(d, ["wid", "v", "n", "op"])
+      && typeof d.wid === "string" && typeof d.v === "string" && d.v.length >= 16
+      && typeof d.n === "string" && d.n.length >= 6 && d.n.length <= 20
+      && ( (!C.exists("wishes/" + d.wid) && C.existsAfter("wishes/" + d.wid)) || opOk(d.wid, OR(d, "op", "")) )
+      && OR(C.getAfter("wishes/" + d.wid), "kh", "") === hex(k);
+    if (method === "update") return d.wid === res.wid && wishOwnerOk();
+    if (method === "create") return wishOwnerOk();
     return opOk(res.wid, "xo_" + k + "_" + res.n);
   }
 
@@ -101,7 +101,7 @@ function evalRule(C, method, p, d, res){
     if (method !== "create") return false;
     return hasOnly(d, ["wid", "k", "at"])
       && typeof d.wid === "string" && typeof d.k === "string" && d.k.length === 64
-      && wishKeyOk(d.wid, d.k, OR(C.get("wishes/" + d.wid), "kh", ""));
+      && wishKeyOk(d.wid, d.k, C.exists("wishes/" + d.wid) ? OR(C.get("wishes/" + d.wid), "kh", "") : "");
   }
 
   /* wishView/{v} */
