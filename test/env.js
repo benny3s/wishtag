@@ -42,7 +42,8 @@ const SV = { __sv: "serverTimestamp" };
 function makeDb(){
   const store = new Map(), ver = new Map();
   let seq = 0;
-  const hooks = { failCommit: null, failGet: null, failWrite: null, writes: [] };
+  /* offline → 쓰기는 기기에 쌓이고 서버 답은 끝내 안 옴 · hold(Promise) → 묶음 저장이 그 약속이 풀릴 때까지 기다림 */
+  const hooks = { failCommit: null, failGet: null, failWrite: null, offline: false, hold: null, writes: [] };
   const bump = p => ver.set(p, (ver.get(p) || 0) + 1);
   function applyUpdate(cur, data){
     const o = JSON.parse(JSON.stringify(cur));
@@ -93,7 +94,7 @@ function makeDb(){
         set: (r, d) => ops.push(["set", r.path, d]),
         update: (r, d) => ops.push(["update", r.path, d]),
         delete: r => ops.push(["delete", r.path]),
-        commit: async () => { await null; if (hooks.failCommit && hooks.failCommit(ops)) throw Object.assign(new Error("net"), { code: "unavailable" }); ops.forEach(o => write(o[0], o[1], o[2])); }
+        commit: async () => { await null; if (hooks.hold) await hooks.hold; if (hooks.failCommit && hooks.failCommit(ops)) throw Object.assign(new Error("net"), { code: "unavailable" }); ops.forEach(o => write(o[0], o[1], o[2])); if (hooks.offline) await new Promise(() => {}); }
       };
     },
     async runTransaction(fn){
