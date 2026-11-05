@@ -2,8 +2,8 @@
    core.js 는 읽지 않고 쓰는 함수만 흉내 낸다. 실서버·브라우저에 닿지 않는다. */
 const fs = require("fs"), path = require("path"), vm = require("vm");
 
-function mainScript(){
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+function mainScript(src){
+  const html = src || fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
   const i = html.indexOf("<script>/* 위시태그");
   const j = html.indexOf("</script>", i);
   return html.slice(i + "<script>".length, j);
@@ -43,7 +43,9 @@ function makeDb(){
   const store = new Map(), ver = new Map();
   let seq = 0;
   /* offline → 쓰기는 기기에 쌓이고 서버 답은 끝내 안 옴 · hold(Promise) → 묶음 저장이 그 약속이 풀릴 때까지 기다림 */
-  const hooks = { failCommit: null, failGet: null, failWrite: null, offline: false, hold: null, writes: [] };
+  /* rules(ops) → { ok } : rules_sim 을 걸면 요청 전체를 규칙으로 본다 · live → 구독하면 지금 값을 한 번 준다 */
+  const hooks = { failCommit: null, failGet: null, failWrite: null, offline: false, hold: null, writes: [], rules: null, live: false };
+  const ruleGate = ops => { if (hooks.rules && !hooks.rules(ops).ok) throw Object.assign(new Error("규칙 거절"), { code: "permission-denied" }); };
   const bump = p => ver.set(p, (ver.get(p) || 0) + 1);
   function applyUpdate(cur, data){
     const o = JSON.parse(JSON.stringify(cur));
@@ -68,17 +70,17 @@ function makeDb(){
     return {
       path: p, id: p.split("/").pop(),
       collection: n => col(p + "/" + n),
-      onSnapshot: () => () => {},
+      onSnapshot: cb => { if (hooks.live) Promise.resolve().then(() => cb(snap(p))); return () => {}; },
       get: async () => { await null; if (hooks.failGet) throw hooks.failGet; return snap(p); },
-      set: async d => { await null; write("set", p, d); },
-      update: async d => { await null; write("update", p, d); },
-      delete: async () => { await null; write("delete", p); }
+      set: async d => { await null; ruleGate([["set", p, d]]); write("set", p, d); },
+      update: async d => { await null; ruleGate([["update", p, d]]); write("update", p, d); },
+      delete: async () => { await null; ruleGate([["delete", p]]); write("delete", p); }
     };
   }
   function col(p){
     return {
       path: p,
-      onSnapshot: () => () => {},
+      onSnapshot: cb => { if (hooks.live) Promise.resolve().then(() => cb({ docs: [...store.keys()].filter(k => k.startsWith(p + "/") && !k.slice(p.length + 1).includes("/")).map(snap) })); return () => {}; },
       doc: id => ref(p + "/" + (id || ("auto" + (++seq)))),
       add: async d => { await null; const r = ref(p + "/auto" + (++seq)); write("set", r.path, d); return r; },
       get: async () => { await null; if (hooks.failGet) throw hooks.failGet;
@@ -94,7 +96,7 @@ function makeDb(){
         set: (r, d) => ops.push(["set", r.path, d]),
         update: (r, d) => ops.push(["update", r.path, d]),
         delete: r => ops.push(["delete", r.path]),
-        commit: async () => { await null; if (hooks.hold) await hooks.hold; if (hooks.failCommit && hooks.failCommit(ops)) throw Object.assign(new Error("net"), { code: "unavailable" }); ops.forEach(o => write(o[0], o[1], o[2])); if (hooks.offline) await new Promise(() => {}); }
+        commit: async () => { await null; if (hooks.hold) await hooks.hold; if (hooks.failCommit && hooks.failCommit(ops)) throw Object.assign(new Error("net"), { code: "unavailable" }); ruleGate(ops); ops.forEach(o => write(o[0], o[1], o[2])); if (hooks.offline) await new Promise(() => {}); }
       };
     },
     async runTransaction(fn){
@@ -118,19 +120,20 @@ function makeDb(){
   return { db, store, hooks };
 }
 
-/** 본 스크립트를 올린 새 환경 */
-function load(shared){
+/** 본 스크립트를 올린 새 환경 — shared: 같은 저장소를 쓰는 다른 기기, opts.html: 옛 화면 원본 */
+function load(shared, opts){
   const els = {};
   const $ = s => els[s] || (els[s] = fakeEl("div"));
   const F = shared || makeDb();
-  const asks = [], statuses = [], closed = [];
+  const asks = [], statuses = [], closed = [], urls = [];
   const ls = {};
   const ctx = {
     console, setTimeout, clearTimeout, Promise, JSON, Math, Date, Object, Array, Set, Map, String, Number, Error, URLSearchParams, TextEncoder, Uint8Array, URL,
     crypto: require("crypto").webcrypto,
-    localStorage: { getItem: k => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); }, removeItem: k => { delete ls[k]; } },
+    localStorage: { getItem: k => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); }, removeItem: k => { delete ls[k]; },
+      get length(){ return Object.keys(ls).length; }, key: i => Object.keys(ls)[i] || null },
     location: { origin: "https://x.test", pathname: "/wishtag/", search: "", reload(){} },
-    history: { replaceState(){}, state: null },
+    history: { replaceState: (s, t, u) => { urls.push(u); }, state: null },
     navigator: {}, matchMedia: () => ({ matches: false }), scrollTo(){}, addEventListener(){}, removeEventListener(){},
     document: { createElement: tag => fakeEl(tag), title: "" },
     firebase: { firestore: { FieldValue: { serverTimestamp: () => SV, arrayUnion: (...a) => ({ __union: a }) } } },
@@ -146,10 +149,10 @@ function load(shared){
   };
   ctx.window = ctx;
   vm.createContext(ctx);
-  vm.runInContext(mainScript(), ctx, { filename: "index.html" });
+  vm.runInContext(mainScript(opts && opts.html), ctx, { filename: "index.html" });
   statuses.length = 0;
   const run = code => vm.runInContext(code, ctx);
-  return { ctx, run, $, els, F, asks, statuses, ls, closed };
+  return { ctx, run, $, els, F, asks, statuses, ls, closed, urls };
 }
 
 const sha = t => require("crypto").createHash("sha256").update(t, "utf8").digest("hex");
@@ -201,4 +204,4 @@ async function main(){
 function eq(a, b, msg){ const A = JSON.stringify(a), B = JSON.stringify(b); if (A !== B) throw new Error((msg || "다름") + ": " + A + " ≠ " + B); }
 function ok(v, msg){ if (!v) throw new Error(msg || "거짓"); }
 
-module.exports = { load, setup, syncItems, friendRules, itemPath, sha, tick, test, main, eq, ok, WID, VID, KEY };
+module.exports = { makeDb, load, setup, syncItems, friendRules, itemPath, sha, tick, test, main, eq, ok, WID, VID, KEY };

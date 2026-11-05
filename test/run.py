@@ -1,16 +1,17 @@
-"""위시태그 시험 실행기 — test/t_*.js 를 node 로 하나씩 돌린다 (python test/run.py [이름 일부])"""
+"""위시태그 시험 실행기 — test/t_*.js 는 node, t_*.py 는 python 으로 하나씩 돌린다 (python test/run.py [이름 일부])"""
 import glob, os, subprocess, sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 NODE = r"C:\Program Files\nodejs\node.exe"
 here = os.path.dirname(os.path.abspath(__file__))
-files = sorted(glob.glob(os.path.join(here, "t_*.js")))
+files = sorted(glob.glob(os.path.join(here, "t_*.js")) + glob.glob(os.path.join(here, "t_*.py")))
 if len(sys.argv) > 1:
     files = [f for f in files if any(a in os.path.basename(f) for a in sys.argv[1:])]
 tp = tf = 0
 for f in files:
     print("== " + os.path.basename(f))
-    r = subprocess.run([NODE, f], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    cmd = [sys.executable, "-X", "utf8", f] if f.endswith(".py") else [NODE, f]
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=120)
     out = r.stdout + r.stderr
     print(out.rstrip())
     got = False
